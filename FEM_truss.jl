@@ -7,7 +7,7 @@ A, E, f, g, idb, ien, ndf, nel, nen ,nnp ,nsd ,xn ,sL  = data_truss()
  Revised: Paul P Wongsittikan
 
 """
-function [F,d,df,stress] = FEM_truss()
+function FEM_truss()
 #  ---- READ IN DATA -----------------------------------------------------
 # Get data from data_truss()
 A, E, f, g, idb, ien, ndf, nel, nen ,nnp ,nsd ,xn ,sL  = data_truss()
@@ -56,14 +56,11 @@ Rcomp,idr = reactions(idb,ien,Fe,ndf,nee,nel,nen,nnp);
 # Rcomp;
 
 # ---- PLOT THE STRUCTURE -----------------------------------------------
-
 # set the plot factor for the thickness of the truss elements
 plot_fac_bar = 1/A(i);
 A_min        = 0.01;
 plot_truss(A,A_min,f,idr,ien,nel,nnp,nsd,plot_fac_bar,xn);
 
-
-# =======================================================================
 
 # Sensitivity calculation
 df = zeros(nel,1);
@@ -74,7 +71,7 @@ for i = 1:nel
     Ke0[:,:,i],Te[:,:,i] = Ke_truss(1,E[i],iend,4,nsd,xn);
     nodes = LM[:,i] ; 
     for k = 1:4 
-        if nodes[k] ~= 0
+        if nodes[k] != 0
             nd = nodes[k] ; 
             de[k,i] = d[nd] ;
         end
@@ -82,5 +79,5 @@ for i = 1:nel
     df[i,1] = -de[:,i]' * Ke0[:,:,i] * de[:,i];
 end
 
-return
-# =======================================================================
+return [F,d,df,stress]
+end

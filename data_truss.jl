@@ -1,3 +1,4 @@
+begin
 """
 ver 4 FEB 2023
 Inputs for truss elements
@@ -21,7 +22,9 @@ Inputs for truss elements
 Outputs
 A, E, f, g, idb, ien, ndf, nel, nen ,nnp ,nsd ,xn ,sL  = data_truss()
 """
+
 include("Utilities.jl")
+include("FEM_utilities.jl")
 
 function data_truss()
     nsd = 2 ;  # number of spacial dimensions
@@ -68,4 +71,6 @@ function data_truss()
     f[2,2] = -P; # Negative is for downward
     return [A,E,f,g,idb,ien,ndf,nel,nen,nnp,nsd,xn,sL] 
     
+end
+
 end

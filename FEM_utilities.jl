@@ -1,3 +1,4 @@
+begin
 """
 Functions used in FEM_truss.jl
 """
@@ -12,8 +13,7 @@ id(ndf,nnp)     = equation numbers of degrees of freedom
 ndf             = number of degrees of freedom per node
 nnp             = number of nodal points
 """
-
-function add_d2dcomp(dcomp::Any,d::Any,id::Any,ndf::Any,nnp::Any)
+function add_d2dcomp(dcomp::Vector{Float64},d::Vector{Float64},id::Vector{Float64},ndf::Int64,nnp::Int64)
 
 # loop over nodes and degrees of freedom
     for n=1:nnp
@@ -36,95 +36,79 @@ end
 # ndf             = number of degrees of freedom per node
 # nnp             = number of nodal points
 """
-function add_loads_to_force(F::Any,f::Any,id::Any,ndf::Any,nnp::Any)
+function add_loads_to_force(F::Any,f::Any,id::Vector{Int64},ndf::Int64,nnp::Int64)
 # loop over nodes and degrees of freedom
-for n = 1:nnp
-    for i = 1:ndf
-        
-        # get the global equation number 
-        M = id[i,n];  
-        
-        # if free degree of freedom, then add nodal load to global force 
-        # vector
-        if M > 0        
-            F[M] = F[M]+f[i,n];
+    for n = 1:nnp
+        for i = 1:ndf
+            
+            # get the global equation number 
+            M = id[i,n];  
+            
+            # if free degree of freedom, then add nodal load to global force 
+            # vector
+            if M > 0        
+                F[M] = F[M]+f[i,n];
+            end
         end
     end
+
+    return F
 end
 
-return F
-end
-# =======================================================================
-
-
-
-# =======================================================================
-
-function[F] = addforce(F::Any,Fe::Any,LM::Any,nee::Any)
-
+"""
 # function that adds element forces to the global force vector
 # -----------------------------------------------------------------------
 # F(neq,1)        = global force vector
 # Fe(nee,1)       = element force vector
 # LM(nee,nel)     = global to local map for the element
 # nee             = number of element equations
+"""
+function addforce(F::Any,Fe::Any,LM::Any,nee::Int64)
 
-# =======================================================================
-
-# loop over rows of Fe
-for i = 1:nee
-    
-    # get the global equation number for local equation i
-    M = LM(i);     
-    
-    # if free dof (eqn number > 0) add to F vector
-    if (M > 0)         
-        F(M)=F(M)+Fe(i);
+    # loop over rows of Fe
+    for i = 1:nee
+        
+        # get the global equation number for local equation i
+        M = LM[i];     
+        
+        # if free dof (eqn number > 0) add to F vector
+        if M > 0    
+            F[M]=F[M]+Fe[i];
+        end
     end
+    return F
 end
-return
-# =======================================================================
 
-
-
-# =======================================================================
-
-function[K] = addstiff(K::Any,Ke::Any,LM::Any,nee::Any)
-
+"""
 # function that solves the equilibrium condition
 # -----------------------------------------------------------------------
 # K(neq,neq)      = global stiffness matrix
 # Ke(nee,nee,1)   = element stiffness matrix
 # LM(nee,nel)     = global to local map for the element
 # nee             = number of element equations
+"""
+function addstiff(K::Vector{Float64},Ke::Vector{Float64},LM::Vector{Float64},nee::Int64)
 
-# =======================================================================
-
-# loop over rows of Ke
-for i = 1:nee
-    
-    # loop over columns of Ke
-    for j = 1:nee                        
+    # loop over rows of Ke
+    for i = 1:nee
         
-        Mr = LM(i);
-        Mc = LM(j);
-        
-        if (Mr > 0 && Mc > 0)             
-            # if equation #'s are non-zero add element contribution to the 
-            # stiffness matrix
-            K(Mr,Mc) = K(Mr,Mc)+Ke(i,j);
+        # loop over columns of Ke
+        for j = 1:nee                        
+            
+            Mr = LM[i];
+            Mc = LM[j];
+            
+            if (Mr > 0 && Mc > 0)             
+                # if equation #'s are non-zero add element contribution to the 
+                # stiffness matrix
+                K[Mr,Mc] = K[Mr,Mc]+Ke[i,j];
+            end
         end
     end
+    return K
 end
-return
-# =======================================================================
 
-
-
-# =======================================================================
-
-function [de] = get_de_from_dcomp(dcomp::Any,ien::Any,ndf::Any,nen::Any)
-
+"""
 #  extracts element displacement vector from complete displacement vector
 #------------------------------------------------------------------------
 # dcomp(ndf,nnp)  = nodal displacements
@@ -133,31 +117,25 @@ function [de] = get_de_from_dcomp(dcomp::Any,ien::Any,ndf::Any,nen::Any)
 # nen             = number of element equations
 #
 # de(nen,1)       = element displacements
-# 
-#------------------------------------------------------------------------
+"""
+function get_de_from_dcomp(dcomp::Any,ien::Any,ndf::Any,nen::Any)
 
-de = zeros(nen,1);
-
-# loop over number of element nodes
-for i = 1:nen
-    
-    # loop over number of degrees of freedom per node
-    for j = 1:ndf
+    de = zeros(nen,1);
+    # loop over number of element nodes
+    for i = 1:nen
         
-        # get the local element number and place displacement in de
-        leq     = (i-1)*ndf+j;   
-        de(leq) = dcomp(j,ien(i));
+        # loop over number of degrees of freedom per node
+        for j = 1:ndf
+            
+            # get the local element number and place displacement in de
+            leq     = (i-1) * ndf + j;   
+            de[leq] = dcomp[j,ien[i]];
+        end
     end
+    return de
 end
-return
-# =======================================================================
 
-
-
-# =======================================================================
-
-function [LM] = get_local_id(id::Any,ien::Any,ndf::Any,nee::Any,nen::Any)
-
+"""
 # functions that performs the global to local mapping of equation numbers
 # -----------------------------------------------------------------------
 # id(ndf,nnp)     = equation numbers of degrees of freedom
@@ -167,35 +145,30 @@ function [LM] = get_local_id(id::Any,ien::Any,ndf::Any,nee::Any,nen::Any)
 # nen             = number of element equations
 #
 # LM(nee,1)       = global to local map for element
+"""
+function get_local_id(id::Any,ien::Any,ndf::Any,nee::Any,nen::Any)
 
-# =======================================================================
+    # initialize global-local mapping matrix
+    LM  = zeros(nee,1);        
 
-# initialize global-local mapping matrix
-LM  = zeros(nee,1);        
+    # initialize local equation number counter
+    k = 0;                      
 
-# initialize local equation number counter
-k = 0;                      
-
-# loop over element nodes
-for i = 1:nen         
-    
-    # loop over degrees of freedom at each node
-    for j = 1:ndf
+    # loop over element nodes
+    for i = 1:nen         
         
-        # update counter and prescribe global equation number
-        k     = k+1;
-        LM(k) = id(j,ien(i));
+        # loop over degrees of freedom at each node
+        for j = 1:ndf
+            
+            # update counter and prescribe global equation number
+            k     = k+1;
+            LM[k] = id[j,ien[i]];
+        end
     end
+    return LM
 end
-return
-# =======================================================================
 
-
-
-# =======================================================================
-
-function globalF(f::Any,g::Any,id::Any,ien::Any,Ke::Any,LM::Any,ndf::Any,nee::Any,nel::Any,nen::Any,neq::Any,nnp::Any) 
-
+"""
 # function that assembles the global load vector
 # -----------------------------------------------------------------------
 # id(ndf,nnp)     = equation numbers of degrees of freedom
@@ -211,42 +184,35 @@ function globalF(f::Any,g::Any,id::Any,ien::Any,Ke::Any,LM::Any,ndf::Any,nee::An
 # nnp             = number of nodal points
 #
 # F(neq,1)        = global force vector
+"""
+function globalF(f::Any,g::Any,id::Any,ien::Any,Ke::Any,LM::Any,ndf::Any,nee::Any,nel::Any,nen::Any,neq::Any,nnp::Any) 
 
-# =======================================================================
+    # initialize
+    F = zeros(neq,1);
 
-# initialize
-F = zeros(neq,1);
+    # Insert applied loads into F
+    F = add_loads_to_force(F,f,id,ndf,nnp);
 
-# Insert applied loads into F
-F = add_loads_to_force(F,f,id,ndf,nnp);
+    # Compute forces from applied displacements (ds~=0) and insert into F
+    Fse = zeros(nee,nel);  
 
-# Compute forces from applied displacements (ds~=0) and insert into F
-Fse = zeros(nee,nel);  
+    # loop over elements
+    for i = 1:nel
+        
+        # get dse for current element
+        dse      = get_de_from_dcomp(g,ien[:,i],ndf,nen);  
+        
+        # compute element force
+        Fse[:,i] = -Ke[:,:,i] * dse;
+        
+        # assemble elem force into global force vector
+        F        = addforce(F,Fse[:,i],LM[:,i],nee);     
+    end
 
-# loop over elements
-for i = 1:nel
-    
-    # get dse for current element
-    dse      = get_de_from_dcomp(g,ien(:,i),ndf,nen);  
-    
-    # compute element force
-    Fse(:,i) = -Ke(:,:,i)*dse;
-    
-    # assemble elem force into global force vector
-    F        = addforce(F,Fse(:,i),LM(:,i),nee);     
+    return F
 end
 
-return F
-end
-
-# =======================================================================
-
-
-
-# =======================================================================
-
-function Ke_truss(A::Any,E::Any,ien::Any,nee::Any,nsd::Any,xn::Any)
-
+"""
 # function that computes the global element stiffness matrix for a truss
 # element
 # -----------------------------------------------------------------------
@@ -259,42 +225,42 @@ function Ke_truss(A::Any,E::Any,ien::Any,nee::Any,nsd::Any,xn::Any)
 #
 # Ke(nee,nee,1)   = global element stiffness matrix
 # Te(nee,nee,1)   = global to local transformation matrix for element
+"""
+function Ke_truss(A::Any,E::Any,ien::Any,nee::Any,nsd::Any,xn::Any)
 
-# =======================================================================
+    # form vector along axis of element using nodal coordinates
+    v = xn[:,ien[2]]-xn[:,ien[1]];
 
-# form vector along axis of element using nodal coordinates
-v = xn(:,ien(2))-xn(:,ien(1));
+    # compute the length of the element
+    Le = norm(v,2);
 
-# compute the length of the element
-Le = norm(v,2);
+    # rotation of parent domain
+    #   rot=[ cos(theta_x)  cos(theta_y)  cos(theta_z) ]'
+    rot = v/Le;
 
-# rotation of parent domain
-#   rot=[ cos(theta_x)  cos(theta_y)  cos(theta_z) ]'
-rot = v/Le;
+    # local element stiffness matrix
+    ke = E*A/Le*[  1  -1
+        -1   1 ];
 
-# local element stiffness matrix
-ke = E*A/Le*[  1  -1
-    -1   1 ];
+    # Transformation matrix: global to local coordinate system
+    if (nsd == 2)   # 2D case
+        
+        # truss Te is nen x ndf*nen array
+        Te = [ rot[1]  rot[2]       0       0
+                    0       0  rot[1]  rot[2] ];
+                
+    elseif (nsd == 3)   # 3D case
 
-# Transformation matrix: global to local coordinate system
-if (nsd == 2)   # 2D case
-    
-    # truss Te is nen x ndf*nen array
-    Te = [ rot(1)  rot(2)       0       0
-                0       0  rot(1)  rot(2) ];
-            
-elseif (nsd == 3)   # 3D case
+        # Truss Te is nen x ndf*nen array
+        Te = [ rot[1]  rot[2]  rot[3]       0       0       0  
+                    0       0       0  rot[1]  rot[2]  rot[3] ];
+    end
 
-    # Truss Te is nen x ndf*nen array
-    Te = [ rot(1)  rot(2)  rot(3)       0       0       0  
-                0       0       0  rot(1)  rot(2)  rot(3) ];
-end
+    # compute the global element stiffness matrix
+    # Ke = zeros(nee,nee);
+    Ke = Te'*ke*Te;
 
-# compute the global element stiffness matrix
-# Ke = zeros(nee,nee);
-Ke = Te'*ke*Te;
-
-return Ke,Te
+    return Ke,Te
 end
 
 """
@@ -333,8 +299,6 @@ end
     end
     return [id, neq]
 end
-# =======================================================================
-
 
 """
 # function that performs post processing for truss elements
@@ -360,7 +324,7 @@ end
 # Fe(nee,nel)     = element forces
 
 """
-function[dcomp,axial,stress,strain,Fe] = post_processing(A::Any,d::Any,E::Any,g::Any,id::Any,ien::Any,
+function post_processing(A::Any,d::Any,E::Any,g::Any,id::Any,ien::Any,
     Ke::Any,ndf::Any,nee::Any,nel::Any,nen::Any,nnp::Any,Te::Any)
 
 # get the total displacement of the structure in matrix form dcomp(nsd,nnp)
@@ -392,7 +356,7 @@ function[dcomp,axial,stress,strain,Fe] = post_processing(A::Any,d::Any,E::Any,g:
             stress[i] = axial[i]/A[i];   
             strain[i] = stress[i]/E[i];
         end
-    return
+    return dcomp,axial,stress,strain,Fe
 end
 
 
@@ -411,7 +375,6 @@ end
 # Rcomp(ndf,nnp)  = nodal reactions
 # idbr(ndf,nnp)   = 0 if the degree of freedom is prescribed,  otherwise
 """
-
 function reactions(idb::Any,ien::Any,Fe::Any,ndf::Any,nee::Any,nel::Any,nen::Any,nnp::Any)
 
     # switch BC marker and number the equations for the reaction forces
@@ -431,11 +394,6 @@ function reactions(idb::Any,ien::Any,Fe::Any,ndf::Any,nee::Any,nel::Any,nen::Any
     return [Rcomp,idr]
 end
 
-# =======================================================================
-
-
-
-# =======================================================================
 """
 # function that solves the equilibrium condition
 # -----------------------------------------------------------------------
@@ -451,13 +409,15 @@ Output
 """
 function solveEQ(F::Any,LM::Any,Ke::Any,nee::Any,nel::Any,neq::Any) 
 
-K = zeros(neq,neq);   # Use 'sparse' for more efficient memory usage
-for i = 1:nel
-    K = addstiff(K,Ke[:,:,i],LM[:,i],nee);
+    K = zeros(neq,neq);   # Use 'sparse' for more efficient memory usage
+    for i = 1:nel
+        K = addstiff(K,Ke[:,:,i],LM[:,i],nee);
+    end
+
+    # solve the equlibrium
+    d = K\F;
+
+    return d 
 end
 
-# solve the equlibrium
-d = K\F;
-
-return d 
 end

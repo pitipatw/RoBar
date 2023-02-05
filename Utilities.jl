@@ -88,7 +88,7 @@ point in the form of
         
     x1    x2
 """
-function diagonal_line(x1,x2,x3,x4)
+function diagonal_line(x1::Int64,x2::Int64,x3::Int64,x4::Int64)
     A = [x1 x4 ;x2 x3] 
     return A
 end
@@ -112,31 +112,34 @@ function get_length(ien::Any,xn::Any)
 end
 
 end
-#  ==== Do not run after this line.
-elements, point_map = groundStruct(3,4,9.,18.)
-# plotground(point_map, elements)
-# using CairoMakie
 
-f = Figure()
-ax = Axis(f[1, 1])
-f
-outx = []
-outy = []
-for i = axes(elements,1)
-    # println(i)
-    pt1::Int64= elements[i,1]
-    pt2::Int64= elements[i,2] 
-    println([pt1 pt2])
-    x1 = point_map[pt1,4]
-    y1 = point_map[pt1,5]
-    x2 = point_map[pt2,4]
-    y2 = point_map[pt2,5]
-    outx = vcat(outx,x1)
-    outx = vcat(outx,x2)
-    outy = vcat(outy,y1)
-    outy = vcat(outy,y2)
+# """
+# #  ==== Do not run after this line.
+# elements, point_map = groundStruct(3,4,9.,18.)
+# # plotground(point_map, elements)
+# # using CairoMakie
+
+# f = Figure()
+# ax = Axis(f[1, 1])
+# f
+# outx = []
+# outy = []
+# for i = axes(elements,1)
+#     # println(i)
+#     pt1::Int64= elements[i,1]
+#     pt2::Int64= elements[i,2] 
+#     println([pt1 pt2])
+#     x1 = point_map[pt1,4]
+#     y1 = point_map[pt1,5]
+#     x2 = point_map[pt2,4]
+#     y2 = point_map[pt2,5]
+#     outx = vcat(outx,x1)
+#     outx = vcat(outx,x2)
+#     outy = vcat(outy,y1)
+#     outy = vcat(outy,y2)
     
-end
+# end
 
-plot(outx,outy)
-return current()
+# plot(outx,outy)
+# return current()
+# """
