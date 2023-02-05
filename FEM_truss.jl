@@ -8,18 +8,22 @@ A, E, f, g, idb, ien, ndf, nel, nen ,nnp ,nsd ,xn ,sL  = data_truss()
 
 """
 function FEM_truss()
+    include("TopOpt-but-Julia/Utilities.jl")
+    include("TopOpt-but-Julia/FEM_utilities.jl")
+
 #  ---- READ IN DATA -----------------------------------------------------
 # Get data from data_truss()
 A, E, f, g, idb, ien, ndf, nel, nen ,nnp ,nsd ,xn ,sL  = data_truss()
-
+# display(ien)
 # ---- NUMBER THE EQUATIONS ---------------------------------------------
 # line 380
-id,neq = number_eq(idb,ndf,nnp);
+id::Array{Int8},neq = number_eq(idb,ndf,nnp);
+
 
 
 # ---- FORM THE ELEMENT STIFFNESS MATRICES ------------------------------
 # line 324
-nee = ndf*nen;                   # number of element equations
+nee::Int8 = ndf*nen;                   # number of element equations
 Ke  = zeros(nee,nee,nel);
 Te  = zeros(nen*1,nen*nsd,nel);  # *1 is specific to truss
 for i = 1:nel
@@ -28,7 +32,7 @@ end
 
 # ---- PERFORM GLOBAL TO LOCAL MAPPING ----------------------------------
 # line 237
-LM  = zeros(nee,nel);
+LM  = zeros(Int8,nee,nel);
 for i = 1:nel
     LM[:,i] = get_local_id(id,ien[:,i],ndf,nee,nen);
 end
@@ -57,7 +61,7 @@ Rcomp,idr = reactions(idb,ien,Fe,ndf,nee,nel,nen,nnp);
 
 # ---- PLOT THE STRUCTURE -----------------------------------------------
 # set the plot factor for the thickness of the truss elements
-plot_fac_bar = 1/A(i);
+plot_fac_bar = 1;
 A_min        = 0.01;
 plot_truss(A,A_min,f,idr,ien,nel,nnp,nsd,plot_fac_bar,xn);
 

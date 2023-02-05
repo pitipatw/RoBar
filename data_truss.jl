@@ -23,20 +23,19 @@ Outputs
 A, E, f, g, idb, ien, ndf, nel, nen ,nnp ,nsd ,xn ,sL  = data_truss()
 """
 
-include("Utilities.jl")
-include("FEM_utilities.jl")
+
 
 function data_truss()
     nsd = 2 ;  # number of spacial dimensions
     ndf = 2 ;  # number of degrees of freedom per node 
     nen = 2 ;  # number of element nodes
-
+    typeof(ndf)
     nnx = 3 ; # number of nodes on X
     nny = 4 ; # number of nodes on Y
     L = 10. ;
     H = 10. ;
 
-    info, point_map = groundStruct(nnx,nny,L,H) ;
+    info::Array{Int8}, point_map = groundStruct(nnx,nny,L,H) ;
     # println("This is point_map")
     # display(point_map)
     # println("This is info")
@@ -45,7 +44,9 @@ function data_truss()
     nel = size(info,1); # number of elements
      
     xn = transpose(point_map[:,4:5]); 
+    # display(info)
     ien = transpose(info) ;
+    # display(ien)
     sL = get_length(ien,xn) ; 
     
     E_mat = 29000.;         # Young's modulus [lbf/in²]
@@ -55,8 +56,7 @@ function data_truss()
     A = 10*ones(nel,1) ;
     
     # Support condition: 1 for restrained, 0 for free.
-    idb = zeros(ndf,nnp);
-    display(idb)
+    idb = zeros(Int8,ndf,nnp);
     idb[:,1] .= 1 ;
     idb[2,3] = 1 ;
     

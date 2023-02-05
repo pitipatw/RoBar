@@ -13,7 +13,7 @@ id(ndf,nnp)     = equation numbers of degrees of freedom
 ndf             = number of degrees of freedom per node
 nnp             = number of nodal points
 """
-function add_d2dcomp(dcomp::Vector{Float64},d::Vector{Float64},id::Vector{Float64},ndf::Int64,nnp::Int64)
+function add_d2dcomp(dcomp::Matrix{Float64},d::Matrix{Float64},id::Matrix{Int8},ndf::Int64,nnp::Int64)
 
 # loop over nodes and degrees of freedom
     for n=1:nnp
@@ -36,7 +36,7 @@ end
 # ndf             = number of degrees of freedom per node
 # nnp             = number of nodal points
 """
-function add_loads_to_force(F::Any,f::Any,id::Vector{Int64},ndf::Int64,nnp::Int64)
+function add_loads_to_force(F::Any,f::Any,id::Array{Int8},ndf::Int64,nnp::Int64)
 # loop over nodes and degrees of freedom
     for n = 1:nnp
         for i = 1:ndf
@@ -63,14 +63,13 @@ end
 # LM(nee,nel)     = global to local map for the element
 # nee             = number of element equations
 """
-function addforce(F::Any,Fe::Any,LM::Any,nee::Int64)
+function addforce(F::Matrix{Float64},Fe::Matrix{Float64},LM::Matrix{Int8},nee::Int8)
 
     # loop over rows of Fe
     for i = 1:nee
-        
         # get the global equation number for local equation i
-        M = LM[i];     
-        
+        M = LM[i];    
+        display(typeof(M))
         # if free dof (eqn number > 0) add to F vector
         if M > 0    
             F[M]=F[M]+Fe[i];
@@ -87,7 +86,7 @@ end
 # LM(nee,nel)     = global to local map for the element
 # nee             = number of element equations
 """
-function addstiff(K::Vector{Float64},Ke::Vector{Float64},LM::Vector{Float64},nee::Int64)
+function addstiff(K::Array{Float64},Ke::Array{Float64},LM::Array{Int8},nee::Int8)
 
     # loop over rows of Ke
     for i = 1:nee
@@ -119,16 +118,16 @@ end
 # de(nen,1)       = element displacements
 """
 function get_de_from_dcomp(dcomp::Any,ien::Any,ndf::Any,nen::Any)
-
-    de = zeros(nen,1);
+    # This was zeros(nen,1) , but it has to be 4x1 or 2*nen, 1? 
+    de = zeros(4,1);  
     # loop over number of element nodes
     for i = 1:nen
         
         # loop over number of degrees of freedom per node
         for j = 1:ndf
-            
+            # println(i,j)
             # get the local element number and place displacement in de
-            leq     = (i-1) * ndf + j;   
+            leq     = (i-1)*ndf + j;   
             de[leq] = dcomp[j,ien[i]];
         end
     end
@@ -185,8 +184,7 @@ end
 #
 # F(neq,1)        = global force vector
 """
-function globalF(f::Any,g::Any,id::Any,ien::Any,Ke::Any,LM::Any,ndf::Any,nee::Any,nel::Any,nen::Any,neq::Any,nnp::Any) 
-
+function globalF(f::Any,g::Any,id::Array{Int8},ien::Any,Ke::Any,LM::Any,ndf::Any,nee::Any,nel::Any,nen::Any,neq::Any,nnp::Any) 
     # initialize
     F = zeros(neq,1);
 
@@ -198,9 +196,8 @@ function globalF(f::Any,g::Any,id::Any,ien::Any,Ke::Any,LM::Any,ndf::Any,nee::An
 
     # loop over elements
     for i = 1:nel
-        
         # get dse for current element
-        dse      = get_de_from_dcomp(g,ien[:,i],ndf,nen);  
+        dse  = get_de_from_dcomp(g,ien[:,i],ndf,nen);  
         
         # compute element force
         Fse[:,i] = -Ke[:,:,i] * dse;
@@ -275,9 +272,9 @@ end
 
  =======================================================================
 """
- function number_eq(idb::Any,ndf::Any,nnp::Any)
+ function number_eq(idb::Array{Int8},ndf::Int8,nnp::Int8)
 # initialize id and neq
-    id  = zeros(ndf,nnp);  
+    id  = zeros(Int8,ndf,nnp);  
     neq = 0;              
 
     # loop over nodes
@@ -297,7 +294,7 @@ end
             end
         end
     end
-    return [id, neq]
+    return [id::Array{Int8}, neq]
 end
 
 """
@@ -378,13 +375,13 @@ end
 function reactions(idb::Any,ien::Any,Fe::Any,ndf::Any,nee::Any,nel::Any,nen::Any,nnp::Any)
 
     # switch BC marker and number the equations for the reaction forces
-    idbr       = 1-idb;  
-    idr,neqr = number_eq(idbr,ndf,nnp);
+    idbr       = 1 .- idb;  
+    idr::Array{Int8},neqr = number_eq(idbr,ndf,nnp);
 
     # assemble reactions R from element force vectors Fe 
     R   = zeros(neqr,1);  
     for i = 1:nel
-        LMR = get_local_id(idr,ien[:,i],ndf,nee,nen);
+        LMR::Array{Int8} = get_local_id(idr,ien[:,i],ndf,nee,nen);
         R   = addforce(R,Fe[:,i],LMR,nee);
     end
 
