@@ -1,4 +1,3 @@
-begin
 """
 ver 4 FEB 2023
 Inputs for truss elements
@@ -23,9 +22,7 @@ Outputs
 A, E, f, g, idb, ien, ndf, nel, nen ,nnp ,nsd ,xn ,sL  = data_truss()
 """
 
-
-
-function data_truss()
+# function data_truss()
     nsd = 2 ;  # number of spacial dimensions
     ndf = 2 ;  # number of degrees of freedom per node 
     nen = 2 ;  # number of element nodes
@@ -35,18 +32,17 @@ function data_truss()
     L = 10. ;
     H = 10. ;
 
-    info::Array{Int8}, point_map = groundStruct(nnx,nny,L,H) ;
-    # println("This is point_map")
-    # display(point_map)
-    # println("This is info")
-    # display(info)
-    nnp = size(point_map,1); # number of nodal points 
-    nel = size(info,1); # number of elements
-     
-    xn = transpose(point_map[:,4:5]); 
-    # display(info)
+    node_points, elements = groundStruct(nnx,nny,L,H) ;
+    nnp = length(node_points) # number of nodal points 
+    nel = length(elements) # number of elements
+    
+    @show values(node_points)
+    @show collect(node_points)
+    xn = transpose(dummy[:,3:4]); 
+    xn = node_points
+ 
     ien = transpose(info) ;
-    # display(ien)
+  
     sL = get_length(ien,xn) ; 
     
     E_mat = 29000.;         # Young's modulus [lbf/in²]
@@ -71,6 +67,6 @@ function data_truss()
     f[2,2] = -P; # Negative is for downward
     return [A,E,f,g,idb,ien,ndf,nel,nen,nnp,nsd,xn,sL] 
     
-end
+# end
 
-end
+# end
