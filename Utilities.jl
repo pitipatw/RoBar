@@ -1,6 +1,5 @@
 
 # function [point_map , A] = coarse(nnx, nny,L,H)
-begin
 using LinearAlgebra
 """
 Todo
@@ -13,29 +12,32 @@ function groundStruct(nnx::Int64, nny::Int64, L::Float64, H::Float64)
     # total number of the elements
     total = nnx*nny ; 
     # point_map is a matrix that contains coordinates of the points
-    point_map = zeros(total,4) ; 
+    point_map = zeros(total,4) ;
+    node_points = Dict{Int,SVector{2,Float64}}()
+
+    
     for i = 1:total 
         xpt = mod(i,nnx) ;
         if xpt == 0 
             xpt = nnx ; #last point in the row
         end 
         ypt = (i-xpt)/nnx+1;
-    
         point_map[i,1] = xpt ;
         point_map[i,2] = ypt ;
         #these 2 lines could be done later. Matrix operation faster?
         point_map[i,3] = (xpt-1)*lx ;
         point_map[i,4] = (ypt-1)*ly ; 
+        @show typeof([(xpt-1.)*lx, (ypt-1.)*ly])
+        node_points[i] = [(xpt-1.)*lx, (ypt-1.)*ly] ;
+
     end
     #add point lable
-    # println("Point Map Original")
-    # display(point_map)
-    
     point_map = hcat((1:nnx*nny) , point_map) ;
-    # println("Point Map Modified")
-    #display(point_map)
 
-    # Create Grid line 
+
+    elements = Dict{Int,Tuple{Int,Int}}()
+    #what I could've done is do ALL HORIZONTAL then ALL VERTICAL.
+    # Create Grid line
     # find total number of lines "in grid"
     # nnx*(nny-1)+nny*(nnx-1) + 
     g1 = zeros(nnx*(nny-1)+nny*(nnx-1) , 2) ;
@@ -46,40 +48,50 @@ function groundStruct(nnx::Int64, nny::Int64, L::Float64, H::Float64)
             pt = (j-1)*nnx+i ;
             g1[count,1] = pt ;
             g1[count,2] = pt+1 ;
+            elements[count] = (pt, pt+1)
             count = count+1 ;
             g1[count,1] = pt ;
             g1[count,2] = pt+nnx ;
+            elements[count] = (pt, pt+nnx)
         end
     end
-    # vertical lines
+    # rightmost and 
     for i = 1:nny-1
         count =count +1;
         pt = nnx*i;
         g1[count,1] = pt ;
         g1[count,2] = pt+nnx ;
+        elements[count] = (pt, pt+nnx)
     end
-    # horizontal lines
+    # topmost lines (complete the box)
     for j = 1:nnx-1
         count = count +1 ;
         pt = nnx*(nny-1)+j ; 
         g1[count,1] = pt ;
         g1[count,2] = pt+1 ;
+        elements[count] = (pt, pt+1)
     end
     
     # find diagonal line 
-    count = 1 ; 
+    ncount = 1 ; 
+    count = count +1
     d = zeros((nnx-1)*(nny-1)*2,2) ; 
     for j = 1:(nny-1)
         for i = 1:(nnx-1)
             pt = (j-1)*nnx+i ; 
-            d[count:count+1,1:2] = diagonal_line(pt,pt+1,pt+nnx,pt+nnx+1) ;
+            d[ncount:ncount+1,1:2] = diagonal_line(pt,pt+1,pt+nnx,pt+nnx+1) ;
+            dummy = diagonal_line(pt,pt+1,pt+nnx,pt+nnx+1) 
+            elements[count]   = Tuple(dummy[1,:])
+            elements[count+1] = Tuple(dummy[2,:])
             count = count+2 ;
+            ncount = ncount +2 ;
         end
     end
-    
-    
+
     A = [g1;d];
-    return [A ,point_map]
+    display(A)
+    display(elements)
+    return node_points, elements #[A ,node_points]
 end
 
 """
@@ -106,12 +118,10 @@ function get_length(ien::Any,xn::Any)
         v = x2-x1 ;
         L = norm(v,2) ;
         sL[1,i] = L ; 
-    
     end
     return sL
 end
 
-end
 
 # """
 # #  ==== Do not run after this line.
