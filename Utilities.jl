@@ -1,6 +1,5 @@
 
 # function [point_map , A] = coarse(nnx, nny,L,H)
-begin
 using LinearAlgebra
 """
 Todo
@@ -14,7 +13,7 @@ function groundStruct(nnx::Int64, nny::Int64, L::Float64, H::Float64)
     total = nnx*nny ; 
     # point_map is a matrix that contains coordinates of the points
     point_map = zeros(total,4) ;
-    node_points = Dict{Int64, Array{Float64,Float64}} ;
+    node_points = Dict{Int,SVector{2,Float64}}()
 
     
     for i = 1:total 
@@ -23,12 +22,12 @@ function groundStruct(nnx::Int64, nny::Int64, L::Float64, H::Float64)
             xpt = nnx ; #last point in the row
         end 
         ypt = (i-xpt)/nnx+1;
-    
         point_map[i,1] = xpt ;
         point_map[i,2] = ypt ;
         #these 2 lines could be done later. Matrix operation faster?
         point_map[i,3] = (xpt-1)*lx ;
         point_map[i,4] = (ypt-1)*ly ; 
+        @show typeof([(xpt-1.)*lx, (ypt-1.)*ly])
         node_points[i] = [(xpt-1.)*lx, (ypt-1.)*ly] ;
 
     end
@@ -36,7 +35,8 @@ function groundStruct(nnx::Int64, nny::Int64, L::Float64, H::Float64)
     point_map = hcat((1:nnx*nny) , point_map) ;
 
 
-    elements = Dict() 
+    elements = Dict{Int,Tuple{Int,Int}}()
+    #what I could've done is do ALL HORIZONTAL then ALL VERTICAL.
     # Create Grid line
     # find total number of lines "in grid"
     # nnx*(nny-1)+nny*(nnx-1) + 
@@ -48,11 +48,11 @@ function groundStruct(nnx::Int64, nny::Int64, L::Float64, H::Float64)
             pt = (j-1)*nnx+i ;
             g1[count,1] = pt ;
             g1[count,2] = pt+1 ;
-            elements[count] = [pt pt+1]
+            elements[count] = (pt, pt+1)
             count = count+1 ;
             g1[count,1] = pt ;
             g1[count,2] = pt+nnx ;
-            elements[count] = [pt pt+nnx]
+            elements[count] = (pt, pt+nnx)
         end
     end
     # rightmost and 
@@ -61,7 +61,7 @@ function groundStruct(nnx::Int64, nny::Int64, L::Float64, H::Float64)
         pt = nnx*i;
         g1[count,1] = pt ;
         g1[count,2] = pt+nnx ;
-        elements[count] = [pt pt+nnx]
+        elements[count] = (pt, pt+nnx)
     end
     # topmost lines (complete the box)
     for j = 1:nnx-1
@@ -69,7 +69,7 @@ function groundStruct(nnx::Int64, nny::Int64, L::Float64, H::Float64)
         pt = nnx*(nny-1)+j ; 
         g1[count,1] = pt ;
         g1[count,2] = pt+1 ;
-        elements[count] = [pt pt+1]
+        elements[count] = (pt, pt+1)
     end
     
     # find diagonal line 
@@ -81,8 +81,8 @@ function groundStruct(nnx::Int64, nny::Int64, L::Float64, H::Float64)
             pt = (j-1)*nnx+i ; 
             d[ncount:ncount+1,1:2] = diagonal_line(pt,pt+1,pt+nnx,pt+nnx+1) ;
             dummy = diagonal_line(pt,pt+1,pt+nnx,pt+nnx+1) 
-            elements[count]   = dummy[1,:]
-            elements[count+1] = dummy[2,:]
+            elements[count]   = Tuple(dummy[1,:])
+            elements[count+1] = Tuple(dummy[2,:])
             count = count+2 ;
             ncount = ncount +2 ;
         end
@@ -122,7 +122,6 @@ function get_length(ien::Any,xn::Any)
     return sL
 end
 
-end
 
 # """
 # #  ==== Do not run after this line.

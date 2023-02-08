@@ -232,7 +232,7 @@
             ]
         },
         {
-            "node_ind": 1,
+            "node_ind": 2,
             "condition": [
                 1,
                 1
@@ -263,10 +263,11 @@
         "0": {
             "ploads": [
                 {
-                    "node_ind": 5,
+                    "node_ind": 10,
                     "force": [
-                        -1,
+                        1,
                         0
+                        
                     ],
                     "loadcase": 0,
                     "force_unit": "kN"
