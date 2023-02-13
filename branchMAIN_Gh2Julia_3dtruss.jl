@@ -1,12 +1,12 @@
 using HTTP.WebSockets
 using JSON
 using TopOpt, LinearAlgebra, StatsFuns
-using Makie, GLMakie
-using TopOpt.TrussTopOptProblems.TrussVisualization: visualize
+#using Makie, GLMakie
+#using TopOpt.TrussTopOptProblems.TrussVisualization: visualize
 using StaticArrays
 using ColorSchemes
 # 10 Feb 2023
-
+checkthis = 1
 server = WebSockets.listen!("127.0.0.1", 2000) do ws
     for msg in ws
         println("Hello there :)")
@@ -54,24 +54,25 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
         @time r = Nonconvex.optimize(
             m, MMA87(; dualoptimizer=ConjugateGradient()), x0; options=options
         )
-
+        id = 0:1:(length(x0)-1)
+        global outr = Dict(id .=> r.minimizer)
         @show obj(r.minimizer)
         @show constr(r.minimizer)
+        global r
+        #color_per_cell = [ones(length(x0))/4 2.0*ones(length(x0))/4 3.0*ones(length(x0))/4 4.0*ones(length(x0))/4 ]
+        #fig = visualize(
+        #    problem, solver.u, topology=r.minimizer,
+        #    default_exagg_scale=0.0
+        #    ,default_element_linewidth_scale = 6.0
+        #    ,default_load_scale = 0.1
+        #    ,default_support_scale = 0.1
+            #,cell_color = color_per_cell
+            #,colormap = ColorSchemes.Spectral_10
 
-        color_per_cell = [ones(length(x0))/4 2.0*ones(length(x0))/4 3.0*ones(length(x0))/4 4.0*ones(length(x0))/4 ]
-        fig = visualize(
-            problem, solver.u, topology=r.minimizer,
-            default_exagg_scale=0.0
-            ,default_element_linewidth_scale = 6.0
-            ,default_load_scale = 0.1
-            ,default_support_scale = 0.1
-            # ,cell_color = color_per_cell
-            # ,colormap = ColorSchemes.Spectral_10
+        # )
+        #Makie.display(fig)
 
-         )
-        Makie.display(fig)
-
-        send(ws, "Im back!")
+        send(ws, JSON.json(outr))
     end
 
 end
