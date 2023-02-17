@@ -24,11 +24,13 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
         println("Inputs Pass Successfully!")
 
         xmin = 0.0001 # minimum density
-        x0 = fill(1.0, ncells) # initial design
+        # link this to volume fraction
+        V = data["maxVf"]
+        x0 = fill(V, ncells) # initial design
         p = 4.0 # penalty
         # V = 0.1 # maximum volume fraction
 
-        V = data["maxVf"]
+        
 
         solver = FEASolver(Direct, problem; xmin=xmin)
         comp = TopOpt.Compliance(solver)
@@ -49,7 +51,7 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
         # add constrain
         Nonconvex.add_ineq_constraint!(m, constr)
 
-        options = MMAOptions(; maxiter=1000, tol=Tolerance(; kkt=1e-4, f=1e-4))
+        options = MMAOptions(; maxiter=200, tol=Tolerance(; kkt=1e-4, f=1e-4))
         TopOpt.setpenalty!(solver, p)
         @time r = Nonconvex.optimize(
             m, MMA87(; dualoptimizer=ConjugateGradient()), x0; options=options
@@ -58,7 +60,7 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
         @show obj(r.minimizer)
         @show constr(r.minimizer)
 
-        color_per_cell = [ones(length(x0))/4 2.0*ones(length(x0))/4 3.0*ones(length(x0))/4 4.0*ones(length(x0))/4 ]
+        # color_per_cell = [ones(length(x0))/4 2.0*ones(length(x0))/4 3.0*ones(length(x0))/4 4.0*ones(length(x0))/4 ]
         fig = visualize(
             problem, solver.u, topology=r.minimizer,
             default_exagg_scale=0.0
@@ -70,8 +72,9 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
 
          )
         Makie.display(fig)
-
-        send(ws, "Im back!")
+        id = 0:1:(length(x0)-1)
+        global outr = Dict(id .=> r.minimizer)
+        send(ws, JSON.json(outr))
     end
 
 end

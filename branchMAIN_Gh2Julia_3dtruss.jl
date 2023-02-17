@@ -49,7 +49,7 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
         # add constrain
         Nonconvex.add_ineq_constraint!(m, constr)
 
-        options = MMAOptions(; maxiter=1000, tol=Tolerance(; kkt=1e-4, f=1e-4))
+        options = MMAOptions(; maxiter=500, tol=Tolerance(; kkt=1e-4, f=1e-4))
         TopOpt.setpenalty!(solver, p)
         @time r = Nonconvex.optimize(
             m, MMA87(; dualoptimizer=ConjugateGradient()), x0; options=options
