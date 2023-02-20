@@ -6,7 +6,7 @@ using StaticArrays
 #This is for visualization
 using Makie, GLMakie
 using TopOpt.TrussTopOptProblems.TrussVisualization: visualize
-
+using ColorSchemes
 
 
 node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, "fromGH1.json"))
@@ -52,14 +52,28 @@ TopOpt.setpenalty!(solver, p)
 
 @show obj(r.minimizer)
 @show constr(r.minimizer)
+color_per_cell = [1*ones(trunc(Int, (length(x0)/4))) ;-0.5*ones(trunc(Int, length(x0)/4)) ;-0.2*ones(trunc(Int, length(x0)/4)) ;-100*ones(trunc(Int, length(x0)/4))]
+
+#1968 elements
+#color_per_cell = vec(100 * rand(Float64 , (1,1968)))
+#color_per_cell = rand(Float64, 1968)
+color_per_cell = TrussStress(solver)(PseudoDensities(r.minimizer))
+Stress = TrussStress(solver)
+color_per_cell2 = Stress(PseudoDensities(r.minimizer))
+A = color_per_cell2 .>=0
+B = color_per_cell2 .<0
+C = A.-B
+#color_per_cell = color_per_cell/maximum(color_per_cell)
+cpc_boolean = color_per_cell.<0
+
 
 fig = visualize(
-    problem, solver.u, topology=r.minimizer,
-    default_exagg_scale=0.0
+    problem ; u = solver.u, topology=r.minimizer
+    ,default_exagg_scale=0.0
     ,default_element_linewidth_scale = 6.0
     ,default_load_scale = 0.1
     ,default_support_scale = 0.1
-    # ,cell_color = color_per_cell
-    # ,colormap = ColorSchemes.Spectral_10
+    ,cell_colors = C
+    ,colormap = ColorSchemes.Spectral_11
  )
 Makie.display(fig)
