@@ -1,20 +1,25 @@
-using HTTP.WebSockets
-using JSON
-using TopOpt, LinearAlgebra, StatsFuns
-using Makie, GLMakie
-using TopOpt.TrussTopOptProblems.TrussVisualization: visualize
-using StaticArrays
-using ColorSchemes
+begin
+    using HTTP.WebSockets
+    using JSON
+    using TopOpt, LinearAlgebra, StatsFuns
+end
+
+begin
+    using Makie, GLMakie
+    using TopOpt.TrussTopOptProblems.TrussVisualization: visualize
+    using StaticArrays
+    using ColorSchemes
+end
 # 10 Feb 2023
 
 server = WebSockets.listen!("127.0.0.1", 2000) do ws
     for msg in ws
         println("Hello there :)")
-        open(joinpath(@__DIR__, "fromGH1.json"), "w") do f
+        open(joinpath(@__DIR__, "fromGH_23FEB.json"), "w") do f
             write(f, msg)
         end
         data = JSON.parse(msg)
-        node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, "fromGH1.json"))
+        node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, "fromGH_23FEB.json"))
 
         ndim, nnodes, ncells = length(node_points[1]), length(node_points), length(elements)
         loads = load_cases["0"]
@@ -70,7 +75,7 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
         #Makie visiiualization
         color_per_cell = [ones(length(x0))/4 2.0*ones(length(x0))/4 3.0*ones(length(x0))/4 4.0*ones(length(x0))/4 ]
         fig = visualize(
-            problem, solver.u, topology=r.minimizer,
+            problem, u = solver.u, topology=r.minimizer,
             default_exagg_scale=0.0
             ,default_element_linewidth_scale = 6.0
             ,default_load_scale = 0.1

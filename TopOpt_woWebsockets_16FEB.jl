@@ -8,7 +8,6 @@ using Makie, GLMakie
 using TopOpt.TrussTopOptProblems.TrussVisualization: visualize
 using ColorSchemes
 
-
 node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, "fromGH1.json"))
 
 ndim, nnodes, ncells = length(node_points[1]), length(node_points), length(elements)
@@ -73,7 +72,7 @@ fig = visualize(
     ,default_element_linewidth_scale = 6.0
     ,default_load_scale = 0.1
     ,default_support_scale = 0.1
-    ,cell_colors = C
+    ,cell_colors = color_per_cell
     ,colormap = ColorSchemes.Spectral_11
  )
 Makie.display(fig)
