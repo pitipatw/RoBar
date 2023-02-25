@@ -2,37 +2,31 @@ using TopOpt
 
 include("info_mod.jl")
 
-
+# Data input
 node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, "fromGH_23FEB.json"))
 ndim, nnodes, ncells = length(node_points[1]), length(node_points), length(elements)
 loads = load_cases["0"]
 
-nnodes
-ncells
-#Create vector of Area and σ with length of elements = 1968
-#create 1 by 1968 vector of Float64 with random values from -1 to 1
-# initial design
-list_of_areas = rand(-10.:10.,ncells,1)[:,1]
-σ = rand(-2.:2.,ncells,1)[:,1]
+println("This problem has ", nnodes, " nodes and ", ncells, " elements.")
+fc′ = 30. # concrete strength
+
+list_of_areas = rand(1:10.,ncells,1)[:,1]
+σ = rand(-20000.:1.,ncells,1)[:,1]
 
 
-#vec = Vector{Float64}(undef, 1968)
+Amin = 0.001
 
+# Get node-element info
+node_element, node_element_con , list_of_forces_on_nodes = nodeElementInfo(list_of_areas, σ,elements)
 
-Amin = 0.1
-
-#create vector of length with random numbers
-
-
-node_element_info , list_of_forces_on_nodes = nodeElementInfo(list_of_areas, σ,elements)
-score = getScore(node_element_info)
-#get key of score that has value more than 0
-key = findall(x -> x > 0, score)
-#get multiple values of score from key
-score[key]
+# Get node score (CCC, CCT, CTT)
+score = getScore(node_element_con)
 
 list_of_betan = getβn(score)
 
+#this might be useless
 elements_betan = getElementsBetan(elements, list_of_betan)
+element_forces = σ .* list_of_areas
+element_capacity_status = checkStrutAndTie(list_of_areas, element_forces, 30.)
 
-# check force in stru
+node_capacity_status = checkNodes(list_of_forces_on_nodes,node_element, list_of_areas,fc′)
