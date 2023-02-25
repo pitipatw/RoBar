@@ -1,4 +1,6 @@
 using StaticArrays
+include("capacities.jl")
+include("factors.jl")
 """
 output node_element_info 
 Dictionary of node# -> list of element# that connects to the node
@@ -60,47 +62,10 @@ function getScore(node_element_info::Dict{Int64,Vector{Int64}})
    return score 
 end
  
-"""
-boundary strut = 1 
-0.75
-worst = 0.4
-"""
-function getβs(StrutLoc::Int64, StrutType::Int64)
-    if StrutLoc == 0 
-        βs= 0.4
-    else
-        if StrutType ==0
-            βs = 1.0
-        else
-            if StrutCrit != 0
-                βs = 0.40
-            end
-        end
-    end
-
-return βs
-end
-
     #create a function to check 23.5.1 a b and 23.4.4 or beam column, 
     # otherwise, StrutCrit = 1
 
-"""
-get \beta_n
-input node score and output beta for capacity calculation
-"""
-function getBetaN(score::Dict{Int64,Float64})
-    dict_of_betan = Dict{Int64,Float64}()
-    for (k,v) in score
-        if v == 0.
-            dict_of_betan[k] = 1.0
-        elseif v == 1.
-            dict_of_betan[k] = 0.8
-        elseif v == 2.
-            dict_of_betan[k] = 0.6
-        end
-    end
-    return dict_of_betan
-end
+
 
 """
 this one tell what are the beta for each element (2 values) 
@@ -113,32 +78,11 @@ function getElementsBetan(elements::Dict{Int64, Tuple{Int64, Int64}}, dict_of_be
     return element_betan
 end
 
-"""
-calculate strut capacity
-"""
-function strutCapacity(betaC::Float64, betaS::Float64,fc′::Float64, Acs::Float64)
-    fce = 0.85*betaC*betaS*fc′  # Concrete stress limit
-    return fce * Acs
-end
+
 
 """
 """
-function tieCapacity(fy::Float64, Ats::Float64)
-    return fy * Ats
-end
 
-"""
-"""
-function nodeCapacity(betaC::Float64, betaS::Float64,fc′::Float64, Anz::Float64)
-    fce = 0.85*betaC*betaS*fc′  # Concrete stress limit
-    return fce * Anz
-end
-
-"""
-"""
-function getPhi(ϵ::Float64)
-    ϕ = clamp(0.65+ 0.25*(ϵ-0.002)/0.003, 0.65 , 0.9)
-    return ϕ
 end
 
 """
@@ -204,7 +148,7 @@ function checkNodes(elements::Dict{Int64, Tuple{Int64, Int64}}, node_forces::Dic
                 betaC = getBetaC(betaC, betaS,fc′, Acs)
                 #check if the force is greater than the node capacity
                 if abs(f) > ϕ * nodeCapacity(betaC, betaA, fc′, area) #also should not say capacity
-                    node_capacity_status[i] = 0
+                    assignValNode(node_element_info,v,1,0)
                     #print error
                     println("Strut capacity exceeded")
                     #print index of the element
