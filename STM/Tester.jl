@@ -24,7 +24,7 @@ Amin = 0.1
 #create vector of length with random numbers
 
 
-node_element_info = nodeElementInfo(list_of_areas, σ,elements)
+node_element_info , list_of_forces_on_nodes = nodeElementInfo(list_of_areas, σ,elements)
 score = getScore(node_element_info)
 #get key of score that has value more than 0
 key = findall(x -> x > 0, score)
@@ -34,3 +34,5 @@ score[key]
 list_of_betan = getβn(score)
 
 elements_betan = getElementsBetan(elements, list_of_betan)
+
+# check force in stru

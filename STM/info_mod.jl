@@ -5,27 +5,31 @@ Dictionary of node# -> list of element# that connects to the node
 """
 function nodeElementInfo(Area::Vector{Float64}, σ::Vector{Float64}, elements::Dict{Int64, Tuple{Int64, Int64}})
 #program starts here
-    node_element_info = Dict{Int64,Vector{Int64}}()
+    node_element_info = Dict{Int64,Vector{Float64}}()
+    list_of_forces_on_nodes = Dict{Int64,Vector{Float64}}()
     #could cut the time by 2 by input both ends
     for (k, v) in elements
         if Area[k] > Amin 
             if σ[k] >= 0 #might have to add tolerance here
                 # tension
-                val = 1
+                val = 1.
             elseif σ[k] < 0 # also a tolerance here
                 # Compression
-                val = 0
+                val = 0.
             end
 
             node_element_info = assignValNode(node_element_info,v,1,val)
             node_element_info = assignValNode(node_element_info,v,2,val)
+            list_of_forces_on_nodes = assignValNode(list_of_forces_on_nodes,v,1,σ[k]*Area[k])
+            list_of_forces_on_nodes = assignValNode(list_of_forces_on_nodes,v,2,σ[k]*Area[k])
+        
         end
     end
     println(node_element_info)
-    return node_element_info
+    return node_element_info , list_of_forces_on_nodes
 end
 
-function assignValNode(node_element_info::Dict{Int64,Vector{Int64}} , v ::Tuple{Int64,Int64} , i::Int64 ,val::Int64)
+function assignValNode(node_element_info::Dict{Int64,Vector{Float64}} , v ::Tuple{Int64,Int64} , i::Int64 ,val::Float64)
     if haskey(node_element_info, v[i])
         push!(node_element_info[v[i]],val)
     else
@@ -110,26 +114,6 @@ function getElementsBetan(elements::Dict{Int64, Tuple{Int64, Int64}}, dict_of_be
 end
 
 """
-Forces on nodes
-"""
-function getForceOnNodes(σ::Vector{Float64}, list_of_areas::Vector{Float64}, elements::Dict{Int64, Tuple{Int64, Int64}}, element_betan::Dict{Int64,Vector{Float64}})
-    node_capacity= Dict{Int64,Vector{Float64}}()
-    forces = σ * list_of_areas
-    for (k,v) in elements
-        if σ[k] >= 0
-            #tension
-            node_forces = assignValNode(node_forces,v,1,σ[k]*element_betan[k][1])
-            node_forces = assignValNode(node_forces,v,2,σ[k]*element_betan[k][2])
-        elseif σ[k] < 0
-            #compression
-            node_forces = assignValNode(node_forces,v,1,σ[k]*element_betan[k][1])
-            node_forces = assignValNode(node_forces,v,2,σ[k]*element_betan[k][2])
-        end
-    end
-    return node_forces
-end
-
-"""
 calculate strut capacity
 """
 function strutCapacity(betaC::Float64, betaS::Float64,fc′::Float64, Acs::Float64)
@@ -152,33 +136,92 @@ end
 
 """
 """
+function getPhi(ϵ::Float64)
+    ϕ = clamp(0.65+ 0.25*(ϵ-0.002)/0.003, 0.65 , 0.9)
+    return ϕ
+end
+
+"""
+"""
 function checkStrutAndTie(elements::Dict{Int64, Tuple{Int64, Int64}}, node_forces::Dict{Int64,Vector{Float64}}, strut_capacity::Dict{Int64,Float64}, tie_capacity::Dict{Int64,Float64})
-#loop each element
+#list containing capacity status of each element
+    element_capacity_status = Vector{Int64}(undef, length(elements))
+    #loop each element
     for i in 1:length(elements)
         f = element_forces[i]
         area = list_of_areas[i]
         #check if f is tension or compression
         if f > 0 # This is tension
+            #it's steel, therefore E = 200GPa
+            E = 200000. #MPa
+            ϵ = f / (E * area)
+            ϕ = getPhi(ϵ)
             #check if the force is greater than the tie capacity
-            if abs(f) > tie_capacity(420. , area)
+            if abs(f) > ϕ*tieCapacity(420. , area) #should not say capacity, but will do for now
+                element_capacity_status[i] = 0
                 #print error
                 println("Tie capacity exceeded")
                 println("Element index: ", i)
+            else
+                element_capacity_status[i] = 1
             end
         else #compression
             betaS = getBetaS(StrutLoc, StrutType)
             betaC = getBetaC(betaC, betaS,fc′, Acs)
+            ϕ = 0.65
             #check if the force is greater than the strut capacity
-            if abs(f) > strut_capacity(1.0, 1.0, 30.0, area)
+            if abs(f) > ϕ * strutCapacity(betaC, betaA, fc′, area) #also should not say capacity
+                element_capacity_status[i] = 0
                 #print error
                 println("Strut capacity exceeded")
                 #print index of the element
                 println("Element index: ", i)
+            else
+                element_capacity_status[i] = 1
             end
 
         end
     end
-    """
+    return element_capacity_status
+end
+
+"""
+"""
+function checkNodes(elements::Dict{Int64, Tuple{Int64, Int64}}, node_forces::Dict{Int64,Vector{Float64}},list_of_forces_on_nodes::Dict{Int64,Vector{Float64}})
+    #list containing capacity status of each node
+    #it will be 1 if all of the forces that act on the node is less than the node's capacity
+    node_capacity_status = Dict(Int64,Vector{Int64})()
+    #check only compression, therefore ϕ = 0.65
+    ϕ = 0.65
+    #loop each node
+    for i in 1:length(nodes)
+        #loop each force that act on the node
+        list_of_forces = list_of_forces_on_nodes[i]
+        for f in list_of_forces 
+            #this has to match with the area of each element
+            if f < 0 # only check compression tension is on steel
+                betaS = getBetaS(StrutLoc, StrutType)
+                betaC = getBetaC(betaC, betaS,fc′, Acs)
+                #check if the force is greater than the node capacity
+                if abs(f) > ϕ * nodeCapacity(betaC, betaA, fc′, area) #also should not say capacity
+                    node_capacity_status[i] = 0
+                    #print error
+                    println("Strut capacity exceeded")
+                    #print index of the element
+                    println("Element index: ", i)
+                else
+                    element_capacity_status[i] = 1
+                end
+
+
+            end
+    return node_capacity_status
+end
+
+"""
+"""
+
+"""
 """
 
 
