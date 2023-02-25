@@ -1,11 +1,11 @@
 using StaticArrays
 """
-output nodeElementInfo 
+output node_element_info 
 Dictionary of node# -> list of element# that connects to the node
 """
-function node_element_info(Area::Vector{Float64}, σ::Vector{Float64}, elements::Dict{Int64, Tuple{Int64, Int64}})
+function nodeElementInfo(Area::Vector{Float64}, σ::Vector{Float64}, elements::Dict{Int64, Tuple{Int64, Int64}})
 #program starts here
-    nodeElementInfo = Dict{Int64,Vector{Int64}}()
+    node_element_info = Dict{Int64,Vector{Int64}}()
     #could cut the time by 2 by input both ends
     for (k, v) in elements
         if Area[k] > Amin 
@@ -17,21 +17,21 @@ function node_element_info(Area::Vector{Float64}, σ::Vector{Float64}, elements:
                 val = 0
             end
 
-            nodeElementInfo = assignValNode(nodeElementInfo,v,1,val)
-            nodeElementInfo = assignValNode(nodeElementInfo,v,2,val)
+            node_element_info = assignValNode(node_element_info,v,1,val)
+            node_element_info = assignValNode(node_element_info,v,2,val)
         end
     end
-    println(nodeElementInfo)
-return nodeElementInfo
+    println(node_element_info)
+    return node_element_info
 end
 
-function assignValNode(nodeElementInfo::Dict{Int64,Vector{Int64}} , v ::Tuple{Int64,Int64} , i::Int64 ,val::Int64)
-    if haskey(nodeElementInfo, v[i])
-        push!(nodeElementInfo[v[i]],val)
+function assignValNode(node_element_info::Dict{Int64,Vector{Int64}} , v ::Tuple{Int64,Int64} , i::Int64 ,val::Int64)
+    if haskey(node_element_info, v[i])
+        push!(node_element_info[v[i]],val)
     else
-        nodeElementInfo[v[i]] = [val]
+        node_element_info[v[i]] = [val]
     end
-    return nodeElementInfo
+    return node_element_info
 end
 # fuhction that get values into keys (it ran 2 times on the above funciton, could be shorter)
 #create function that group the 
@@ -45,27 +45,17 @@ Strut efficiency factor betas
 Get Score CCC = 0 CCT = 1 CTT = 2
 
 """
-function getScore(nodeElementInfo::Dict{Int64,Vector{Int64}})
-    list_of_keys = collect(keys(nodeElementInfo))
+function getScore(node_element_info::Dict{Int64,Vector{Int64}})
+    list_of_keys = collect(keys(node_element_info))
     score = Dict(zip(list_of_keys, zeros(length(list_of_keys)) )) #create a dictionary of zeros
-    for (k,v) in nodeElementInfo
-        if sum(v) == 0
-            score[k] = 2
-        elseif sum(v) == 1
-            score[k] = 1
-        elseif sum(v) >= 2
-            score[k] = 0
-        end
+    for (k,v) in node_element_info
+        score[k] = clamp( sum(v), 0, 2)
     end
     println("DONE")
     println(score)
    return score 
 end
-
-"""
-
-
-
+ 
 """
 boundary strut = 1 
 0.75
@@ -90,34 +80,108 @@ end
     #create a function to check 23.5.1 a b and 23.4.4 or beam column, 
     # otherwise, StrutCrit = 1
 
-
-
-
-
-function gen_node_prop(σ::Vector{Float64} ,node_points::Dict{Int64, SVector{3, Float64}}, elements ::Dict{Int64, Tuple{Int64, Int64}})
-    node_labels = collect(keys(node_points)) 
-    node_prop = Dict(Int, Vector{Int})
-    for i in node_labels
-        # i is an index
-        # find elements number that connect to that node. 
-        nodeElementInfo = Dict()
-        #could cut the time by 2 by input both ends
-        for (k, v) in elements
-            println(k)
-            if haskey(nodeElementInfo, v)
-                push!(nodeElementInfo[v],k)
-            else
-                nodeElementInfo[v] = [k]
-            end
+"""
+get \beta_n
+input node score and output beta for capacity calculation
+"""
+function getBetaN(score::Dict{Int64,Float64})
+    dict_of_betan = Dict{Int64,Float64}()
+    for (k,v) in score
+        if v == 0.
+            dict_of_betan[k] = 1.0
+        elseif v == 1.
+            dict_of_betan[k] = 0.8
+        elseif v == 2.
+            dict_of_betan[k] = 0.6
         end
-
-        if σ > 0 #tension
-            push!(node_prop[i],1)
-        elseif σ < 0 #Compression
-            push!(node_prop[i],0)
-        end
-    end  
+    end
+    return dict_of_betan
 end
+
+"""
+this one tell what are the beta for each element (2 values) 
+"""
+function getElementsBetan(elements::Dict{Int64, Tuple{Int64, Int64}}, dict_of_betan::Dict{Int64,Float64})
+    element_betan = Dict{Int64,Vector{Float64}}()
+    for (k,v) in elements
+        element_betan[k] = [dict_of_betan[v[1]],dict_of_betan[v[2]]]
+    end
+    return element_betan
+end
+
+"""
+Forces on nodes
+"""
+function getForceOnNodes(σ::Vector{Float64}, list_of_areas::Vector{Float64}, elements::Dict{Int64, Tuple{Int64, Int64}}, element_betan::Dict{Int64,Vector{Float64}})
+    node_capacity= Dict{Int64,Vector{Float64}}()
+    forces = σ * list_of_areas
+    for (k,v) in elements
+        if σ[k] >= 0
+            #tension
+            node_forces = assignValNode(node_forces,v,1,σ[k]*element_betan[k][1])
+            node_forces = assignValNode(node_forces,v,2,σ[k]*element_betan[k][2])
+        elseif σ[k] < 0
+            #compression
+            node_forces = assignValNode(node_forces,v,1,σ[k]*element_betan[k][1])
+            node_forces = assignValNode(node_forces,v,2,σ[k]*element_betan[k][2])
+        end
+    end
+    return node_forces
+end
+
+"""
+calculate strut capacity
+"""
+function strutCapacity(betaC::Float64, betaS::Float64,fc′::Float64, Acs::Float64)
+    fce = 0.85*betaC*betaS*fc′  # Concrete stress limit
+    return fce * Acs
+end
+
+"""
+"""
+function tieCapacity(fy::Float64, Ats::Float64)
+    return fy * Ats
+end
+
+"""
+"""
+function nodeCapacity(betaC::Float64, betaS::Float64,fc′::Float64, Anz::Float64)
+    fce = 0.85*betaC*betaS*fc′  # Concrete stress limit
+    return fce * Anz
+end
+
+"""
+"""
+function checkStrutAndTie(elements::Dict{Int64, Tuple{Int64, Int64}}, node_forces::Dict{Int64,Vector{Float64}}, strut_capacity::Dict{Int64,Float64}, tie_capacity::Dict{Int64,Float64})
+#loop each element
+    for i in 1:length(elements)
+        f = element_forces[i]
+        area = list_of_areas[i]
+        #check if f is tension or compression
+        if f > 0 # This is tension
+            #check if the force is greater than the tie capacity
+            if abs(f) > tie_capacity(420. , area)
+                #print error
+                println("Tie capacity exceeded")
+                println("Element index: ", i)
+            end
+        else #compression
+            betaS = getBetaS(StrutLoc, StrutType)
+            betaC = getBetaC(betaC, betaS,fc′, Acs)
+            #check if the force is greater than the strut capacity
+            if abs(f) > strut_capacity(1.0, 1.0, 30.0, area)
+                #print error
+                println("Strut capacity exceeded")
+                #print index of the element
+                println("Element index: ", i)
+            end
+
+        end
+    end
+    """
+"""
+
+
 
 function node_mod(nodes::Dict{Int64,Vector{Float64}})
     # Tension : 1

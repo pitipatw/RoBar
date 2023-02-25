@@ -15,11 +15,11 @@ end
 server = WebSockets.listen!("127.0.0.1", 2000) do ws
     for msg in ws
         println("Hello there :)")
-        open(joinpath(@__DIR__, "fromGH_23FEB.json"), "w") do f
+        open(joinpath(@__DIR__, "fromGH_24FEB.json"), "w") do f
             write(f, msg)
         end
         data = JSON.parse(msg)
-        node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, "fromGH_23FEB.json"))
+        node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, "fromGH_24FEB.json"))
 
         ndim, nnodes, ncells = length(node_points[1]), length(node_points), length(elements)
         loads = load_cases["0"]

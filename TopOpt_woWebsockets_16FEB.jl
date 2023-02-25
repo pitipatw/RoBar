@@ -56,6 +56,7 @@ color_per_cell = [1*ones(trunc(Int, (length(x0)/4))) ;-0.5*ones(trunc(Int, lengt
 #1968 elements
 #color_per_cell = vec(100 * rand(Float64 , (1,1968)))
 #color_per_cell = rand(Float64, 1968)
+#24 FEB, getdim not define. 
 color_per_cell = TrussStress(solver)(PseudoDensities(r.minimizer))
 Stress = TrussStress(solver)
 color_per_cell2 = Stress(PseudoDensities(r.minimizer))
