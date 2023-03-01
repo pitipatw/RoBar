@@ -70,7 +70,8 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
         id = 0:1:(length(x0)-1)
         global outr = Dict(id .=> r.minimizer)
         send(ws, JSON.json(outr))
-
+        open(joinpath(@__DIR__,"\\output\\", "fromGH_24FEB.json"), "w") do f
+            write(f, msg)
 
         #Makie visiiualization
         color_per_cell = [ones(length(x0))/4 2.0*ones(length(x0))/4 3.0*ones(length(x0))/4 4.0*ones(length(x0))/4 ]
