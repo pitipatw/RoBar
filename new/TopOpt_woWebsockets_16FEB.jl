@@ -24,7 +24,7 @@ p = 4.0 # penalty
 # V = 0.1 # maximum volume fraction
 
 
-V = 0.4
+V = 0.1
 solver = FEASolver(Direct, problem; xmin=xmin)
 comp = TopOpt.Compliance(solver)
 
