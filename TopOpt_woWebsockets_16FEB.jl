@@ -17,13 +17,13 @@ problem = TrussProblem(
 )
 println("Inputs Pass Successfully!")
 
-xmin = 0.0001 # minimum density
+xmin = 0.0001 # minimum density (area?)
 x0 = fill(1.0, ncells) # initial design
 p = 4.0 # penalty
 # V = 0.1 # maximum volume fraction
 
 
-V = 0.1
+V = 0.4
 solver = FEASolver(Direct, problem; xmin=xmin)
 comp = TopOpt.Compliance(solver)
 
@@ -73,7 +73,7 @@ fig = visualize(
     ,default_element_linewidth_scale = 6.0
     ,default_load_scale = 0.1
     ,default_support_scale = 0.1
-    ,cell_colors = color_per_cell
-    ,colormap = ColorSchemes.Spectral_11
+    ,cell_colors = color_per_cell*100
+    ,colormap = ColorSchemes.brg
  )
 Makie.display(fig)

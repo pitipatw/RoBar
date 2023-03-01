@@ -1,6 +1,7 @@
 using TopOpt
 
 include("info_mod.jl")
+include("factors.jl")
 
 # Data input
 node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, "fromGH_23FEB.json"))
@@ -10,23 +11,30 @@ loads = load_cases["0"]
 println("This problem has ", nnodes, " nodes and ", ncells, " elements.")
 fc′ = 30. # concrete strength
 
-list_of_areas = rand(1:10.,ncells,1)[:,1]
+list_of_areas = 1000*rand(0:10.,ncells,1)[:,1]
 σ = rand(-20000.:1.,ncells,1)[:,1]
 
 
 Amin = 0.001
 
 # Get node-element info
-node_element, node_element_con , list_of_forces_on_nodes = nodeElementInfo(list_of_areas, σ,elements)
+node_element_index, node_element_unsum_score ,node_element_area, list_of_forces_on_nodes = nodeElementInfo(list_of_areas, σ,elements)
+node_element_area = checkNodeElement(node_element_area)
+
+#explain the structure of node_element_index and node_element_unsum_score
+node_element_index
 
 # Get node score (CCC, CCT, CTT)
-score = getScore(node_element_con)
+score = getScore(node_element_unsum_score)
 
-list_of_betan = getβn(score)
+list_of_betan = getBetaN(score)
 
 #this might be useless
 elements_betan = getElementsBetan(elements, list_of_betan)
 element_forces = σ .* list_of_areas
 element_capacity_status = checkStrutAndTie(list_of_areas, element_forces, 30.)
 
-node_capacity_status = checkNodes(list_of_forces_on_nodes,node_element, list_of_areas,fc′)
+node_capacity_status = checkNodes(list_of_forces_on_nodes,node_element_index, list_of_areas,fc′)
+
+# get rid of hanging node
+

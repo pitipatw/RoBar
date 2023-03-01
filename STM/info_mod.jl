@@ -16,18 +16,19 @@ include("factors.jl")
 
 
 """
-output node_element_con 
+output node_element_unsum_score 
 Dictionary of node# -> list of element# that connects to the node
 """
 function nodeElementInfo(Area::Vector{Float64}, σ::Vector{Float64}, elements::Dict{Int64, Tuple{Int64, Int64}})
 #program starts here
-    node_element = Dict{Int64,Vector{Float64}}()
-    node_element_con = Dict{Int64,Vector{Float64}}()
+    node_element_index = Dict{Int64,Vector{Float64}}()
+    node_element_unsum_score = Dict{Int64,Vector{Float64}}()
+    node_element_area = Dict{Int64,Vector{Float64}}()
     list_of_forces_on_nodes = Dict{Int64,Vector{Float64}}()
     Amin = 0.001
     #could cut the time by 2 by input both ends
     for (k, v) in elements
-        if Area[k] > Amin 
+        #if Area[k] > Amin 
             if σ[k] > 0 #might have to add tolerance here
                 # tension
                 val = 1.
@@ -36,28 +37,31 @@ function nodeElementInfo(Area::Vector{Float64}, σ::Vector{Float64}, elements::D
                 val = 0.
             end
 
-            node_element = assignValNode(node_element,v,1,k)
-            node_element = assignValNode(node_element,v,2,k)
+            node_element_index = assignValNode(node_element_index,v,1,k)
+            node_element_index = assignValNode(node_element_index,v,2,k)
             
             #con is for condition
-            node_element_con = assignValNode(node_element_con,v,1,val)
-            node_element_con = assignValNode(node_element_con,v,2,val)
+            node_element_unsum_score = assignValNode(node_element_unsum_score,v,1,val)
+            node_element_unsum_score = assignValNode(node_element_unsum_score,v,2,val)
+
+            node_element_area = assignValNode(node_element_area,v,1,Area[k])
+            node_element_area = assignValNode(node_element_area,v,2,Area[k])
 
             list_of_forces_on_nodes = assignValNode(list_of_forces_on_nodes,v,1,σ[k]*Area[k])
             list_of_forces_on_nodes = assignValNode(list_of_forces_on_nodes,v,2,σ[k]*Area[k])
         
-        end
+        #end
     end
-    return node_element, node_element_con , list_of_forces_on_nodes
+    return node_element_index, node_element_unsum_score ,node_element_area, list_of_forces_on_nodes
 end
 
-function assignValNode(node_element_con::Dict{Int64,Vector{Float64}} , v ::Tuple{Int64,Int64} , i::Int64 ,val::Union{Float64,Int64})
-    if haskey(node_element_con, v[i])
-        push!(node_element_con[v[i]],val)
+function assignValNode(node_element_unsum_score::Dict{Int64,Vector{Float64}} , v ::Tuple{Int64,Int64} , i::Int64 ,val::Union{Float64,Int64})
+    if haskey(node_element_unsum_score, v[i])
+        push!(node_element_unsum_score[v[i]],val)
     else
-        node_element_con[v[i]] = [val]
+        node_element_unsum_score[v[i]] = [val]
     end
-    return node_element_con
+    return node_element_unsum_score
 end
 # fuhction that get values into keys (it ran 2 times on the above funciton, could be shorter)
 #create function that group the 
@@ -71,10 +75,10 @@ Strut efficiency factor betas
 Get Score CCC = 0 CCT = 1 CTT = 2
 
 """
-function getScore(node_element_con::Dict{Int64,Vector{Float64}})
-    list_of_keys = collect(keys(node_element_con))
+function getScore(node_element_unsum_score::Dict{Int64,Vector{Float64}})
+    list_of_keys = collect(keys(node_element_unsum_score))
     score = Dict(zip(list_of_keys, zeros(length(list_of_keys)) )) #create a dictionary of zeros
-    for (k,v) in node_element_con
+    for (k,v) in node_element_unsum_score
         score[k] = clamp( sum(v), 0, 2)
     end
     println("DONE")
@@ -149,17 +153,17 @@ end
 
 """
 """
-function checkNodes(node_forces::Dict{Int64,Vector{Float64}}, node_element::Dict{Int64,Vector{Float64}}, list_of_areas::Vector{Float64}, fc′::Float64)
+function checkNodes(node_forces::Dict{Int64,Vector{Float64}}, node_element_index::Dict{Int64,Vector{Float64}}, list_of_areas::Vector{Float64}, fc′::Float64)
     #list containing capacity status of each node
     #it will be 1 if all of the forces that act on the node is less than the node's capacity
     node_capacity_status = Dict()#Dict{Int64, Dict{Int64,Vector{Int64}}}
     #check only compression, therefore ϕ = 0.65
     ϕ = 0.65
     #loop each node
-    for i in 1:length(node_element) # get node index
+    for i in 1:length(node_element_index) # get node index
         # 1 pass, 0 fail
         # list of the connected elements on the node i
-        connected_elements = node_element[i]
+        connected_elements = node_element_index[i]
         node_status = Dict()
 
         list_of_forces = node_forces[i]
