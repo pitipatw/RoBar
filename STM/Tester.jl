@@ -3,6 +3,7 @@ using TopOpt
 include("info_mod.jl")
 include("factors.jl")
 include("findPath.jl")
+include("checkNodeElement.jl")
 # Data input
 node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, "fromGH_23FEB.json"))
 ndim, nnodes, ncells = length(node_points[1]), length(node_points), length(elements)
@@ -64,15 +65,24 @@ list_of_areas[Int.(passed_elements)]
 passed_element_areas
 using Makie, GLMakie
 
-
+using ColorSchemes
 #This is for visualization
 f = Figure(resolution = (800, 800))
 ax = Axis3(f[1, 1], title = "Truss Path",
         xlabel = "x", ylabel = "y")
 points = Point3f.(ptx,pty,ptz)
-start_points = points[1]
-end_points = points[end]
-lines(points)
-scatter!(ax,start_points, color = :red, markersize = 10)
-scatter!(ax,end_points, color = :green, markersize = 10)
+t = range(0, stop=1,length = length(ptx))
+
+start_point = points[1]
+end_point = points[end]
+lines(points,
+        colormap = ColorSchemes.magma.colors,
+        color = t)
+scatter!(start_point,color=:red, markersize = 10)
+text!(start_point, text = "Start", color = :red)
+scatter!(end_point, color = :green, markersize = 10)
+text!(end_point, text = "End", color = :green)
 f
+
+
+# this part is for plotting another plot with color as the utilization ratio

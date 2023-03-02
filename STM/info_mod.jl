@@ -157,8 +157,6 @@ function checkNodes(node_forces::Dict{Int64,Vector{Float64}}, node_element_index
     #list containing capacity status of each node
     #it will be 1 if all of the forces that act on the node is less than the node's capacity
     node_capacity_status = Dict()#Dict{Int64, Dict{Int64,Vector{Int64}}}
-    #check only compression, therefore ϕ = 0.65
-    ϕ = 0.65
     #loop each node
     for i in 1:length(node_element_index) # get node index
         # 1 pass, 0 fail
@@ -190,7 +188,7 @@ function checkNodes(node_forces::Dict{Int64,Vector{Float64}}, node_element_index
 
                 #check if the force is greater than the node capacity
                 println("force= ", f)
-                if abs(f) > ϕ * nodeCapacity(betaC, betaS, fc′, area)
+                if abs(f) > nodeCapacity(betaC, betaS, fc′, area)
                     node_status[elem_num] = 0
                     #print error
                     println("Strut capacity exceeded")
