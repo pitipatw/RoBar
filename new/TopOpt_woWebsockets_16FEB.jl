@@ -77,3 +77,5 @@ fig = visualize(
     ,colormap = ColorSchemes.Spectral_11
  )
 Makie.display(fig)
+
+# Create vector of floats with ncells by ndim
