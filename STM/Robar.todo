@@ -2,9 +2,19 @@
     - Data input
         - Rhino-Grasshopper environment
     - Topology optimization
+    - create file for test
+        line width = sqrt(Area)/pi. 
+        plot it out with Makie, by yourself.
+    - Find angle between the member and horizontal plane, 
+        This will be used to calculate struts area.
+Export the geometry only with tensile members 
+
 
     - Robot
 would be great to have element in terms of start node and vector.
     so we can easily find the angle and stuff. 
 
 Development length at the radius still underdevelopment.
+
+For nodal design
+start with the steel length, then strut later. 
