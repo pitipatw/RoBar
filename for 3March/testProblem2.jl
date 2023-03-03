@@ -18,11 +18,14 @@ problem = TrussProblem(
 println("This problem has ", nnodes, " nodes and ", ncells, " elements.")
 fc′ = 30. # concrete strength
 
-list_of_areas = 5e-2.*ones(ncells,1)[:,1]
+list_of_areas = ones(ncells,1)[:,1]
 
 xmin = 0.0001
 solver = FEASolver(Direct, problem; xmin=xmin)
-σ = TrussStress(solver)(PseudoDensities(list_of_areas))
+solver.vars = list_of_areas
+solver()
+ts = TrussStress(solver)
+σ =ts(PseudoDensities(list_of_areas))
 
 color_per_cell = abs.(σ.*list_of_areas)
 fig1 = visualize(
