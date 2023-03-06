@@ -25,12 +25,12 @@ solver = FEASolver(Direct, problem; xmin=xmin)
 
 
 begin
-x0 = fill(10., ncells)
+x0 = fill(1.0, ncells)
 println(x0)
-σ = TrussStress(solver)(PseudoDensities(x0))
-println("this is stress: ", σ)
-color_per_cell = abs.(σ.*x0)
-println("this is forces", σ.*x0)
+σ1 = TrussStress(solver)(PseudoDensities(x0))
+println("this is stress: ", σ1)
+color_per_cell = abs.(σ1.*x0)
+println("this is forces", σ1.*x0)
 end
 fig1 = visualize(
             problem, u = fill(0.1, nnodes*ndim), topology=x0,

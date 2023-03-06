@@ -3,7 +3,7 @@ using Makie, GLMakie
 using TopOpt.TrussTopOptProblems.TrussVisualization: visualize
 using JSON
 using ColorSchemes
-
+include("C:\\Users\\pitipatw\\dev\\TopOpt.jl\\src")
 
 # Data input
 
@@ -22,12 +22,10 @@ list_of_areas = ones(ncells,1)[:,1]
 
 xmin = 0.0001
 solver = FEASolver(Direct, problem; xmin=xmin)
-solver.vars = list_of_areas
-solver()
-ts = TrussStress_mod(solver)
-σ =ts(PseudoDensities(list_of_areas))
+ts = TrussStress(solver)
+σ1 =ts(PseudoDensities(list_of_areas))
 
-color_per_cell = abs.(σ.*list_of_areas)
+color_per_cell = abs.(σ1.*list_of_areas)
 fig1 = visualize(
             problem, u = fill(0.1, nnodes*ndim), topology=list_of_areas,
             default_exagg_scale=0.0
@@ -64,6 +62,8 @@ Makie.display(fig1)
     fevals::Int
     maxfevals::Int
 end
+
+getncells(grid::Any) = length(grid.cells)
  function TrussStress_mod(solver::Any; maxfevals=10^8)
     println("This is modified")
     T = eltype(solver.u)
@@ -81,7 +81,7 @@ end
         fill!(R, 0.0)
         R[1, 1:dim] = R_coord[:, 1]
         R[2, (dim + 1):(2 * dim)] = R_coord[:, 2]
-        push!(transf_matrices, R)
+        push!(transf_matrices, copy(R))
     end
     return TrussStress(σ, u_fn, transf_matrices, 0, maxfevals)
 end
