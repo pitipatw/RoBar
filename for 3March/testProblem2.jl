@@ -24,7 +24,7 @@ xmin = 0.0001
 solver = FEASolver(Direct, problem; xmin=xmin)
 solver.vars = list_of_areas
 solver()
-ts = TrussStress(solver)
+ts = TrussStress_mod(solver)
 σ =ts(PseudoDensities(list_of_areas))
 
 color_per_cell = abs.(σ.*list_of_areas)
@@ -56,4 +56,32 @@ Makie.display(fig1)
  
  "
 
-
+"""
+@params mutable struct TrussStress{T} <: AbstractFunction{T}
+    σ::AbstractVector{T} # stress vector, axial stress per cell
+    u_fn::Displacement
+    transf_matrices::AbstractVector{<:AbstractMatrix{T}}
+    fevals::Int
+    maxfevals::Int
+end
+ function TrussStress_mod(solver::Any; maxfevals=10^8)
+    println("This is modified")
+    T = eltype(solver.u)
+    dim = TopOptProblems.getdim(solver.problem)
+    dh = solver.problem.ch.dh
+    N = getncells(dh.grid)
+    σ = zeros(T, N)
+    transf_matrices = Matrix{T}[]
+    u_fn = Displacement(solver; maxfevals)
+    R = zeros(T, (2, 2 * dim))
+    for (cellidx, cell) in enumerate(CellIterator(dh))
+        u, v = cell.coords[1], cell.coords[2]
+        # R ∈ 2 x (2*dim)
+        R_coord = compute_local_axes(u, v)
+        fill!(R, 0.0)
+        R[1, 1:dim] = R_coord[:, 1]
+        R[2, (dim + 1):(2 * dim)] = R_coord[:, 2]
+        push!(transf_matrices, R)
+    end
+    return TrussStress(σ, u_fn, transf_matrices, 0, maxfevals)
+end
