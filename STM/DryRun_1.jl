@@ -4,6 +4,7 @@ using Makie, GLMakie
 using Meshes
 using ColorSchemes
 
+
 include("info_mod.jl")
 include("factors.jl")
 include("findPath.jl")
@@ -124,7 +125,7 @@ f = Figure(resolution = (800, 800))
 ax = Axis3(f[1, 1], title = "Truss Path",
         xlabel = "x", ylabel = "y")
 points = Point3f.(ptx,pty,ptz)
-points = [ptx, pty, ptz]
+#points = [ptx, pty, ptz]
 t = range(0, stop=1,length = length(ptx))
 
 start_point = points[1]
