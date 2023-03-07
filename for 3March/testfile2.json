@@ -81,7 +81,7 @@
     },
     "cross_secs": [
         {
-            "A": 5.0e-2,
+            "A": 50.0,
             "name": "",
             "family": "DummyCroSec",
             "elem_tags": [],

@@ -1,9 +1,14 @@
 using TopOpt
+# TopOpt v0.7.2 `https://github.com/pitipatw/TopOpt.jl#master`
+using Makie, GLMakie
+using Meshes
+using ColorSchemes
 
 include("info_mod.jl")
 include("factors.jl")
 include("findPath.jl")
 include("checkNodeElement.jl")
+include("postProcess.jl")
 # Data input
 node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, "fromGH_23FEB.json"))
 ndim, nnodes, ncells = length(node_points[1]), length(node_points), length(elements)
@@ -57,7 +62,7 @@ TopOpt.setpenalty!(solver, p)
 
 solver = FEASolver(Direct, problem; xmin=xmin)
 ts = TrussStress(solver)
-σ =ts(PseudoDensities(x))
+σ =ts(PseudoDensities(r.minimizer))
 
 list_of_areas = r.minimizer
 
@@ -109,16 +114,17 @@ for i in eachindex(passed_elements)
     passed_element_areas[i] =list_of_areas[Int(passed_elements[i])]
 end
 
+available_sizes =  [ 1. 2. 3.][:]
+mod_list_of_areas = postProcess(list_of_areas, available_sizes)
 list_of_areas[Int.(passed_elements)]
 passed_element_areas
-using Makie, GLMakie
 
-using ColorSchemes
 #This is for visualization
 f = Figure(resolution = (800, 800))
 ax = Axis3(f[1, 1], title = "Truss Path",
         xlabel = "x", ylabel = "y")
 points = Point3f.(ptx,pty,ptz)
+points = [ptx, pty, ptz]
 t = range(0, stop=1,length = length(ptx))
 
 start_point = points[1]
