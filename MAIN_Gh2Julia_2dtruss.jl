@@ -9,8 +9,8 @@ using StaticArrays
 
 server = WebSockets.listen!("127.0.0.1", 2000) do ws
     for msg in ws
-        println("HI")
-        open(joinpath(@__DIR__, "fromGH1.json"), "w") do f
+        println("Hello World")
+        open(joinpath(@__DIR__, "example1.json"), "w") do f
             write(f, msg)
         end
         data = JSON.parse(msg)
