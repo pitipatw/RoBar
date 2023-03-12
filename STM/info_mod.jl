@@ -152,13 +152,14 @@ function checkStrutAndTie(list_of_areas::Vector{Float64}, element_forces::Vector
 end
 
 """
+Bug, incompatible variable names
 """
 function checkNodes(node_forces::Dict{Int64,Vector{Float64}}, node_element_index::Dict{Int64,Vector{Float64}}, list_of_areas::Vector{Float64}, fc′::Float64)
     #list containing capacity status of each node
     #it will be 1 if all of the forces that act on the node is less than the node's capacity
     node_capacity_status = Dict()#Dict{Int64, Dict{Int64,Vector{Int64}}}
     #loop each node
-    for i in 1:length(node_element_index) # get node index
+    for i in eachindex(node_element_index) # get node index
         # 1 pass, 0 fail
         # list of the connected elements on the node i
         connected_elements = node_element_index[i]
@@ -171,7 +172,7 @@ function checkNodes(node_forces::Dict{Int64,Vector{Float64}}, node_element_index
         list_of_areas_at_the_node = list_of_areas[Int.(connected_elements)]
         # A node has many forces act on it, so we need to check each force
         #loop each force that act on the node
-        for j in 1:length(list_of_forces)
+        for j in eachindex(list_of_forces)
             f = list_of_forces[j]
             elem_num = connected_elements[j]
             area = list_of_areas_at_the_node[j] 
@@ -191,9 +192,9 @@ function checkNodes(node_forces::Dict{Int64,Vector{Float64}}, node_element_index
                 if abs(f) > nodeCapacity(betaC, betaS, fc′, area)
                     node_status[elem_num] = 0
                     #print error
-                    println("Strut capacity exceeded")
+                    println("Node capacity exceeded")
                     #print index of the element
-                    println("Element index: ", j)
+                    println("At node Element index: ", j)
                 else
                     println(node_status)
                     node_status[elem_num] = 1

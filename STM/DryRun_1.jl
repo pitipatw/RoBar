@@ -11,7 +11,8 @@ include("findPath.jl")
 include("checkNodeElement.jl")
 include("postProcess.jl")
 # Data input
-node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, "fromGH_23FEB.json"))
+filename = "fromGH_23FEB.json"
+node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, filename))
 ndim, nnodes, ncells = length(node_points[1]), length(node_points), length(elements)
 loads = load_cases["0"]
 
@@ -42,9 +43,11 @@ function obj(x)
 end
 function constr(x)
     # volume fraction constraint
+    # I think this is for continuum topology optimization
+    # NOT FOR TRUSS TOPOLOGY OPTIMIZATION
     return sum(x) / length(x) - V
 end
-
++
 # setting upmodel
 m = Model(obj)
 #add variable boundary (model , lb, ub)
@@ -66,6 +69,7 @@ ts = TrussStress(solver)
 σ =ts(PseudoDensities(r.minimizer))
 
 list_of_areas = r.minimizer
+list_of_areas = x0 
 
 
 #STM starts here. 
@@ -87,16 +91,57 @@ list_of_betan = getBetaN(score)
 #this might be useless
 elements_betan = getElementsBetan(elements, list_of_betan)
 element_forces = σ .* list_of_areas
+#check strut and ties capacity
 element_capacity_status = checkStrutAndTie(list_of_areas, element_forces, 30.)
 
+#check node capacity
 node_capacity_status = checkNodes(list_of_forces_on_nodes,node_element_index, list_of_areas,fc′)
 
 # get rid of hanging node
 possible_starting_nodes = feasibleStartingPoints(node_element_area)
-starting_node = possible_starting_nodes[1]
-result = findPath(node_element_area, node_element_index,elements, starting_node)
-passed_points = result[1]
-passed_elements = result[2]
+
+# find the Path
+# Iterate every points as a starting point, and every element connected to the point as a starting element
+possible_paths = Dict()
+for i in eachindex(possible_starting_nodes)
+    start_node = possible_starting_nodes[i]
+    #get possible starting elements
+    possible_start_element = node_element_index[start_node]
+    for j in eachindex(node_element_index[start_node])
+        starting_element = possible_start_element[j]
+        result = findPath(node_element_area, node_element_index,elements, 
+        start_node,start_element)
+        # passed_points = result[1] # a list of points
+        # passed_elements = result[2] # a list of elements
+        possible_paths[i] = result
+    end
+end
+
+# now the possible_paths dictionary contains the all of the possible paths
+
+# get each path's each element area 
+
+# get each path's total area
+
+#collecting the points for plot
+# loop each possible path to plot
+    #gonna do moving graph thing :)
+for (k,v) in possible_paths
+    ptx = zeros(length(v[1])) # v[1] is a list of points
+    pty = zeros(length(v[1]))
+    ptz = zeros(length(v[1]))
+    for i in eachindex(v[1])
+        ptx[i] = node_points[v[1][i]][1]
+        pty[i] = node_points[v[1][i]][2]
+        ptz[i] = node_points[v[1][i]][3]
+    end
+    f = Figure(resolution = (800, 800))
+    ax = Axis3(f[1, 1], title = "Truss Path",
+        xlabel = "x", ylabel = "y", zlabel = "z")
+    lines!(ax, ptx, pty, ptz, color = :red, linewidth = 2)
+    scatter!(ax, ptx, pty, ptz, color = :red, markersize = 10)
+    display(f)
+end
 
 ptx = zeros(length(passed_points))
 pty = zeros(length(passed_points))
@@ -107,14 +152,14 @@ ptz = zeros(length(passed_points))
     ptz[i] = node_points[passed_points[i]][3]
 end
 
-
-
 passed_element_areas = zeros(length(passed_elements))
 
 for i in eachindex(passed_elements)
     passed_element_areas[i] =list_of_areas[Int(passed_elements[i])]
 end
 
+#post processing
+#pushing areas to the next available size
 available_sizes =  [ 1. 2. 3.][:]
 mod_list_of_areas = postProcess(list_of_areas, available_sizes)
 list_of_areas[Int.(passed_elements)]
