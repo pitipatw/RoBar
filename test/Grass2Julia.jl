@@ -14,20 +14,22 @@ end
 # 10 Feb 2023
 # 14 March 2023
 
-filename = "Tester.json"
+
 server = WebSockets.listen!("127.0.0.1", 2000) do ws
     for msg in ws
         println("Hello, we meet again :)")
         #read stage info from JSON
         data = JSON.parse(msg)
         stage = data["stage"]
+        filename = "Tester"
+
         if stage == "GS"
             println("Entering GroundStructure creation stage...")
             #create ground structure here.
             send(ws, "Ground Structre created!")
         elseif stage == "Opt"
             println("Entering Topology Optimization stage...")
-            open(joinpath(@__DIR__, filename), "w") do f
+            open(joinpath(@__DIR__, filename*".json"), "w") do f
             write(f, msg)
             println("json file written Successfully")
             
@@ -54,7 +56,8 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
             # setting up the problem
             xmin = 0.0001 # minimum density
             V = data["maxVf"]
-            x0 = fill(1.0, ncells) # initial design
+
+            x0 = fill(0.5, ncells) # initial design
             p = 4.0 # penalty
     
             solver = FEASolver(Direct, problem; xmin=xmin)
@@ -99,15 +102,19 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
             # create JSON to send back the information
             results["Area"] =  r.minimizer
             results["Stress"] = σ1
-            send(ws, JSON.json(results))  
+            results["Elements"] = elements
+            msg = JSON.json(results)
+            send(ws, msg)  
 
             # write savepath 
-            savepath = joinpath(@__DIR__,"\\output\\", filename * "_out.json")
+            savepath = joinpath(@__DIR__, filename * "_out.json")
             # save
             open(joinpath(@__DIR__,savepath), "w") do f
                 write(f, msg)
             end
+            println("json output file written Successfully")
             
+            #Truss visualization
             fig = visualize(
                 problem; u =solver.u, topology=r.minimizer, cell_colors = color, 
                 colormap = ColorSchemes.brg,
