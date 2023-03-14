@@ -1,5 +1,6 @@
 [deps]
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 TopOpt = "53a1e1a5-51bb-58a9-8a02-02056cc81109"

@@ -32,6 +32,7 @@ println("this is stress: ", σ1)
 color_per_cell = abs.(σ1.*x0)
 println("this is forces", σ1.*x0)
 end
+
 fig1 = visualize(
             problem, u = fill(0.1, nnodes*ndim), topology=x0,
             default_exagg_scale=0.0
@@ -44,3 +45,6 @@ fig1 = visualize(
          )
 Makie.display(fig1)
 
+
+
+list_of_areas = 
