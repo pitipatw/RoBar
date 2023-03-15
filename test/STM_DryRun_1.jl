@@ -90,30 +90,33 @@ for i in eachindex(possible_starting_nodes)
     #get possible starting elements
     possible_start_element = node_element_index[start_node]
     for j in eachindex(node_element_index[start_node])
-        starting_element = possible_start_element[j]
-        result = findPath(node_element_area, node_element_index,elements, start_node)
+        start_element = Int(possible_start_element[j])
+        # println("start node: ", start_node)
+        # println("Start element: ", start_element)
+        result = findPath(node_element_area, node_element_index,elements, start_node,start_element)
         # passed_points = result[1] # a list of points
         # passed_elements = result[2] # a list of elements
         possible_paths[(i,j)] = result
     end
 end
 
+println("NUmber of possible Paths: ", length(possible_paths))
+
 # now the possible_paths dictionary contains the all of the possible paths
 
-# get each path's each element area 
-
-# get each path's total area
 begin
 #collecting the points for plot
 # loop each possible path to plot
     #gonna do moving graph thing :)
-nr = 6
-nc = 5
+nr = 7
+nc = 7
 track_row = 1
 track_col = 1 
-
+plt_counter = 0
 f = Figure(resolution = (1000, 1000))
 for (k,v) in possible_paths
+    # if plt_counter > track_row*track_col
+        
     #reset ptx pty ptz
     ptx = zeros(length(v[1])) # v[1] is a list of points
     pty = zeros(length(v[1]))
@@ -139,8 +142,8 @@ for (k,v) in possible_paths
     start_point = (ptx[1] , pty[1] , ptz[1])
     end_point   = (ptx[end] , pty[end] , ptz[end])
 
-    println("Start Point: ", start_point)
-    println("End Point: ", end_point)
+    # println("Start Point: ", start_point)
+    # println("End Point: ", end_point)
 
     scatter!(ax, start_point, color=:red, markersize = 15)
     #text!(ax,start_point, text = "Start", color = :red)

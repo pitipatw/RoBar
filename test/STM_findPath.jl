@@ -19,58 +19,72 @@ longest path problem
 have to process the elements area first
 """
 function findPath(node_element_area::Dict{Int64,Vector{Float64}},node_element_index::Dict{Int64, Vector{Float64}}, elements::Dict{Int64, Tuple{Int64, Int64}},
-    start_node::Int64,start_element_rel_idx::Int64) #this is optional
+    start_node::Int64,start_element::Int64)
     #start element is using the actual index of the elements that are connected to the start node.
     println("start node: ", start_node)
-    
+    println("Start element: ", start_element)
+    #containers for the path
     passed_nodes = []
     passed_elements = []
-    current_node = start_node
-    println("Connected elements at start node", node_element_index[current_node])
-    first_set_of_areas = node_element_area[current_node]
-    println("first set of areas: ", first_set_of_areas)
-    min_area = maximum(first_set_of_areas)
-    elem_ind = 1 #dummy
-    for i in eachindex(first_set_of_areas)
-        if (first_set_of_areas[i] <= min_area) && (first_set_of_areas[i] > 0)
-            min_area = first_set_of_areas[i]
-            elem_ind = node_element_index[current_node][i]
-            println("found min area!")
-        end
-    end
-    current_element = elem_ind
-    @assert elem_ind ∈ node_element_index[current_node]
 
+    current_node = start_node
+
+    # println("Connected elements at start node", node_element_index[current_node])
+    # first_set_of_areas = node_element_area[current_node]
+    # println("first set of areas: ", first_set_of_areas)
+    # min_area = maximum(first_set_of_areas)
+    # elem_idx = 1 #dummy
+    # for i in eachindex(first_set_of_areas)
+    #     if (first_set_of_areas[i] <= min_area) && (first_set_of_areas[i] > 0)
+    #         min_area = first_set_of_areas[i]
+    #         elem_idx = node_element_index[current_node][i]
+    #         println("found min area!")
+    #     end
+    # end
+    current_element = start_element
+    # @assert elem_idx ∈ node_element_index[current_node]
+
+    #Pilot gave me this line, so might have to recheck in the future.
+    min_area = node_element_area[current_node][node_element_index[current_node].==current_element][1]
+
+    # keep doing until the element is repeated.
     while current_element ∉ passed_elements
         push!(passed_nodes, current_node)
-        push!(passed_elements, elem_ind)
+        push!(passed_elements, current_element)
 
-        next_node = elements[elem_ind][1]
+        # Dummy next node, not the actual next node.
+        next_node = elements[current_element][1]
         if next_node == current_node
-            next_node = elements[elem_ind][2]
+            #just in case the order of the node is repeated, switch into another side of the element.
+            next_node = elements[current_element][2]
         end
 
-        next_elements = node_element_index[next_node]
-        filter = next_elements .!= current_element
-        possible_elements = next_elements[filter]
+        #next possible elements
+        next_possible_elements = node_element_index[next_node]
 
+        #dont repeat the same element
+        filter = next_possible_elements .!= current_element
+
+        new_elements = next_possible_elements[filter]
         new_areas = node_element_area[next_node][filter]
+
         diff_areas = abs.(new_areas .- min_area)
         min_area = maximum(diff_areas)
 
-        elem_ind = 1 #dummy
+        current_element = new_elements[argmin(diff_areas)]
+        # elem_idx = 1 #dummy
         for i in eachindex(diff_areas)
             if (diff_areas[i] <= min_area) && (diff_areas[i] > 0)
                 min_area = diff_areas[i]
-                elem_ind = possible_elements[i]
+                current_element= new_elements[i]
             end
         end
     current_node = next_node
-    current_element = elem_ind
+    # current_element = elem_idx
     end
 
     push!(passed_nodes, current_node)
-    push!(passed_elements, elem_ind)
+    push!(passed_elements, current_element)
     return passed_nodes, passed_elements
 end
 
