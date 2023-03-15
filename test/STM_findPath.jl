@@ -60,18 +60,23 @@ function findPath(node_element_area::Dict{Int64,Vector{Float64}},node_element_in
         end
 
         #next possible elements
-        next_possible_elements = node_element_index[next_node]
+        possible_elements_raw = node_element_index[next_node]
 
         #dont repeat the same element
-        filter = next_possible_elements .!= current_element
-
+        # this part is wrong. 
+        # using SET
+        next_possible_elements = setdiff(possible_elements_raw, passed_elements)
+        
+        filter = [bool(possible_elements_raw[i] ∈ next_possible_elements ? true : false  for i in eachindex(possible_elements_raw)]
+        @show next_possible_elements .!= current_element
+        println(filter)
         new_elements = next_possible_elements[filter]
         new_areas = node_element_area[next_node][filter]
 
         diff_areas = abs.(new_areas .- min_area)
         min_area = maximum(diff_areas)
 
-        current_element = new_elements[argmin(diff_areas)]
+        current_element = new_elements[argmax(diff_areas)]
         # elem_idx = 1 #dummy
         for i in eachindex(diff_areas)
             if (diff_areas[i] <= min_area) && (diff_areas[i] > 0)

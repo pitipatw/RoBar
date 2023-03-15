@@ -138,7 +138,6 @@ for (k,v) in possible_paths
     lines!(ax, ptx, pty, ptz, color = t, linewidth = 3, 
         colormap = ColorSchemes.magma.colors)
 
-
     start_point = (ptx[1] , pty[1] , ptz[1])
     end_point   = (ptx[end] , pty[end] , ptz[end])
 
@@ -158,7 +157,7 @@ for (k,v) in possible_paths
         x2 = node_points[v0[2]][1]
         y2 = node_points[v0[2]][2]
         z2 = node_points[v0[2]][3]
-        lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray, linewidth = 1)
+        lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray, linewidth = 0.5)
     end
     if track_col == nc
         if track_row == nr
