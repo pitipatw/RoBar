@@ -1,6 +1,6 @@
 using TopOpt
 # TopOpt v0.7.2 `https://github.com/pitipatw/TopOpt.jl#master`
-using Makie, GLMakie
+using Makie, GLMakie, CairoMakie
 #using Meshes
 using ColorSchemes
 
@@ -107,6 +107,13 @@ end
 #collecting the points for plot
 # loop each possible path to plot
     #gonna do moving graph thing :)
+nr = 6.0
+nc = 6.0
+f = Figure(resolution = (1000, 1000))
+    
+
+track_row = 1
+track_col = 1 
 for (k,v) in possible_paths
     ptx = zeros(length(v[1])) # v[1] is a list of points
     pty = zeros(length(v[1]))
@@ -116,14 +123,36 @@ for (k,v) in possible_paths
         pty[i] = node_points[v[1][i]][2]
         ptz[i] = node_points[v[1][i]][3]
     end
-    f = Figure(resolution = (800, 800))
-    ax = Axis3(f[1, 1], title = "Truss Path",
-        xlabel = "x", ylabel = "y", zlabel = "z")
+    
+    ax = Axis3(f[track_row, track_col], title = "Truss Path",
+            xlabel = "x", ylabel = "y", zlabel = "z")
     lines!(ax, ptx, pty, ptz, color = :red, linewidth = 2)
     scatter!(ax, ptx, pty, ptz, color = :red, markersize = 10)
-    display(f)
-    break
+    t = range(0, stop=1,length = length(ptx))
+
+    start_point = points[1]
+    end_point = points[end]
+    lines(points,
+        colormap = ColorSchemes.magma.colors,
+        color = t)
+    scatter!(start_point,color=:red, markersize = 10)
+    text!(start_point, text = "Start", color = :red)
+    scatter!(end_point, color = :green, markersize = 10)
+    text!(end_point, text = "End", color = :green)
+    if track_col == nc
+        track_row += 1
+        track_col = 1
+    else
+        track_col += 1
+    end
 end
+display(f)
+
+
+
+
+
+
 
 ptx = zeros(length(passed_points))
 pty = zeros(length(passed_points))
