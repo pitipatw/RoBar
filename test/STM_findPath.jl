@@ -18,8 +18,8 @@ end
 longest path problem
 have to process the elements area first
 """
-function findPath(node_element_area::Dict{Int64,Vector{Float64}},node_element_index::Dict{Int64, Vector{Float64}}, elements::Dict{Int64, Tuple{Int64, Int64}};
-    start_node::Int64 = 1,start_element) #this is optional
+function findPath(node_element_area::Dict{Int64,Vector{Float64}},node_element_index::Dict{Int64, Vector{Float64}}, elements::Dict{Int64, Tuple{Int64, Int64}},
+    start_node::Int64,start_element_rel_idx::Int64) #this is optional
     #start element is using the actual index of the elements that are connected to the start node.
     println("start node: ", start_node)
     

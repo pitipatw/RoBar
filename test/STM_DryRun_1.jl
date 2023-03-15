@@ -94,7 +94,7 @@ for i in eachindex(possible_starting_nodes)
         result = findPath(node_element_area, node_element_index,elements, start_node)
         # passed_points = result[1] # a list of points
         # passed_elements = result[2] # a list of elements
-        possible_paths[i] = result
+        possible_paths[(i,j)] = result
     end
 end
 
@@ -103,20 +103,18 @@ end
 # get each path's each element area 
 
 # get each path's total area
-
+begin
 #collecting the points for plot
 # loop each possible path to plot
     #gonna do moving graph thing :)
-nr = 4.0
-nc = 4.0
-f = Figure(resolution = (1000, 1000))
-    
-
+nr = 6
+nc = 5
 track_row = 1
 track_col = 1 
 
-
+f = Figure(resolution = (1000, 1000))
 for (k,v) in possible_paths
+    #reset ptx pty ptz
     ptx = zeros(length(v[1])) # v[1] is a list of points
     pty = zeros(length(v[1]))
     ptz = zeros(length(v[1]))
@@ -126,9 +124,30 @@ for (k,v) in possible_paths
         ptz[i] = node_points[v[1][i]][3]
     end
     ax = Axis3(f[track_row, track_col], title = "Truss Path $k",
-    xlabel = "x", ylabel = "y", zlabel = "z")
+    xlabel = "x", ylabel = "y", zlabel = "z", aspect = (1,1/2,1))
 
-    #plot element 
+    ax.azimuth[] = -pi/2
+    ax.elevation = pi/2
+
+    # t is for color
+    t = range(0, stop=1,length = length(ptx))
+
+    lines!(ax, ptx, pty, ptz, color = t, linewidth = 3, 
+        colormap = ColorSchemes.magma.colors)
+
+
+    start_point = (ptx[1] , pty[1] , ptz[1])
+    end_point   = (ptx[end] , pty[end] , ptz[end])
+
+    println("Start Point: ", start_point)
+    println("End Point: ", end_point)
+
+    scatter!(ax, start_point, color=:red, markersize = 15)
+    #text!(ax,start_point, text = "Start", color = :red)
+    scatter!(ax, end_point, color = :green, markersize = 10)
+    #text!(ax,end_point, color = :green , text = "End")
+
+    #plot entire truss
     for (k0,v0) in elements
         x1 = node_points[v0[1]][1]
         y1 = node_points[v0[1]][2]
@@ -138,18 +157,6 @@ for (k,v) in possible_paths
         z2 = node_points[v0[2]][3]
         lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray, linewidth = 1)
     end
-    # t is for color
-    t = range(0, stop=1,length = length(ptx))
-
-    lines!(ax, ptx, pty, ptz, color = t, linewidth = 2, 
-        colormap = ColorSchemes.magma.colors)
-    # scatter!(ax, ptx, pty, ptz, color = :red, markersize = 10)
-    start_point = [ ptx[1] , pty[1] , ptz[1] ]
-    end_point   = [ ptx[end] , pty[end] , ptz[end] ]
-    scatter!(ax,start_point,color=:red, markersize = 3)
-    #text!(ax,start_point, text = "Start", color = :red)
-    scatter!(ax,end_point, color = :green, markersize = 3)
-    #text!(ax,end_point, color = :green , text = "End")
     if track_col == nc
         if track_row == nr
             break
@@ -163,20 +170,17 @@ for (k,v) in possible_paths
 end
 display(f)
 
-
-
-
-
-
-
-ptx = zeros(length(passed_points))
-pty = zeros(length(passed_points))
-ptz = zeros(length(passed_points))
-@time for i in eachindex(passed_points)
-    ptx[i] = node_points[passed_points[i]][1]
-    pty[i] = node_points[passed_points[i]][2]
-    ptz[i] = node_points[passed_points[i]][3]
+cb = Colorbar(f[:, nc+1] ,colormap = ColorSchemes.magma.colors )
 end
+
+# ptx = zeros(length(passed_points))
+# pty = zeros(length(passed_points))
+# ptz = zeros(length(passed_points))
+# @time for i in eachindex(passed_points)
+#     ptx[i] = node_points[passed_points[i]][1]
+#     pty[i] = node_points[passed_points[i]][2]
+#     ptz[i] = node_points[passed_points[i]][3]
+# end
 
 passed_element_areas = zeros(length(passed_elements))
 
