@@ -1,10 +1,8 @@
 using TopOpt
 # TopOpt v0.7.2 `https://github.com/pitipatw/TopOpt.jl#master`
 using Makie, GLMakie
-using Meshes
+#using Meshes
 using ColorSchemes
-using TopOpt.TrussTopOptProblems.TrussVisualization: visualize
-
 
 
 include("STM_info_mod.jl")
@@ -13,65 +11,46 @@ include("STM_findPath.jl")
 include("STM_checkNodeElement.jl")
 include("STM_postProcess.jl")
 # Data input
-filename = "testfile1.json"
-node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, filename))
-ndim, nnodes, ncells = length(node_points[1]), length(node_points), length(elements)
-loads = load_cases["0"]
+data = JSON.parsefile("Tester_out.json"::AbstractString; dicttype=Dict, inttype=Float64, use_mmap=true)
 
-println("This problem has ", nnodes, " nodes and ", ncells, " elements.")
+
+list_of_areas_raw = convert(Array{Float64,1}, data["Area"])
+σ_raw = convert(Array{Float64,1},data["Stress"])
+
+elements_raw = data["Elements"]
+elements_raw_converted = Dict{Int64, Tuple{Int64, Int64}}()
+for (k,v) in elements_raw 
+    elements_raw_converted[parse(Int64,k)] = Tuple{Int64, Int64}(v)
+end
+
+filter = list_of_areas_raw .> 0 
+
+list_of_areas = list_of_areas_raw[filter]
+σ = σ_raw[filter]
+
+elements = Dict{Int64, Tuple{Int64, Int64}}()
+counter = 0 
+for i in eachindex(filter) 
+    if filter[i] == true
+        counter += 1
+        elements[counter] = elements_raw_converted[i]
+    end
+end
+
+
+
+
 # Material properties
+begin
 fc′ = 30. # concrete strength [MPa]
+Ec = 4700.0*sqrt(fc′)
 Es = 200000. # steel strength [MPa]
+end
 
 # get this from the topology optimization result (r.minimizer)
 
 
-problem = TrussProblem(
-    Val{:Linear}, node_points, elements, loads, fixities, mats, crosssecs
-)
 println("Inputs Pass Successfully!")
-xmin = 0.0001 # minimum density
-x0 = fill(1.0, ncells) # initial design
-p = 4.0 # penalty
-# V = 0.1 # maximum volume fraction
-V = 0.2
-
-solver = FEASolver(Direct, problem; xmin=xmin)
-comp = TopOpt.Compliance(solver)
-
-function obj(x)
-    # minimize compliance
-    return comp(PseudoDensities(x))
-end
-function constr(x)
-    # volume fraction constraint
-    # I think this is for continuum topology optimization
-    # NOT FOR TRUSS TOPOLOGY OPTIMIZATION
-    return sum(x) / length(x) - V
-end
-+
-# setting upmodel
-m = Model(obj)
-#add variable boundary (model , lb, ub)
-addvar!(m, zeros(length(x0)), ones(length(x0)))
-# add constrain
-Nonconvex.add_ineq_constraint!(m, constr)
-
-options = MMAOptions(; maxiter=1000, tol=Tolerance(; kkt=1e-4, f=1e-4))
-TopOpt.setpenalty!(solver, p)
-@time r = Nonconvex.optimize(
-    m, MMA87(; dualoptimizer=ConjugateGradient()), x0; options=options
-)
-
-@show obj(r.minimizer)
-@show constr(r.minimizer)
-
-solver = FEASolver(Direct, problem; xmin=xmin)
-ts = TrussStress(solver)
-σ =ts(PseudoDensities(r.minimizer))
-
-list_of_areas = r.minimizer
-list_of_areas = x0 
 
 
 #STM starts here. 
@@ -79,7 +58,7 @@ list_of_areas = x0
 Amin = 0.001
 
 # Get node-element info
-node_element_index, node_element_unsum_score ,node_element_area, list_of_forces_on_nodes = nodeElementInfo(list_of_areas, σ,elements)
+node_element_index, node_element_unsum_score ,node_element_area, list_of_forces_on_nodes = nodeElementInfo(list_of_areas, σ ,elements)
 node_element_area = checkNodeElement(node_element_area)
 
 #explain the structure of node_element_index and node_element_unsum_score
@@ -100,6 +79,7 @@ element_capacity_status = checkStrutAndTie(list_of_areas, element_forces, 30.)
 node_capacity_status = checkNodes(list_of_forces_on_nodes,node_element_index, list_of_areas,fc′)
 
 # get rid of hanging node
+
 possible_starting_nodes = feasibleStartingPoints(node_element_area)
 
 # find the Path
@@ -111,8 +91,7 @@ for i in eachindex(possible_starting_nodes)
     possible_start_element = node_element_index[start_node]
     for j in eachindex(node_element_index[start_node])
         starting_element = possible_start_element[j]
-        result = findPath(node_element_area, node_element_index,elements, 
-        start_node,start_element)
+        result = findPath(node_element_area, node_element_index,elements, start_node)
         # passed_points = result[1] # a list of points
         # passed_elements = result[2] # a list of elements
         possible_paths[i] = result
@@ -143,6 +122,7 @@ for (k,v) in possible_paths
     lines!(ax, ptx, pty, ptz, color = :red, linewidth = 2)
     scatter!(ax, ptx, pty, ptz, color = :red, markersize = 10)
     display(f)
+    break
 end
 
 ptx = zeros(length(passed_points))
@@ -160,12 +140,16 @@ for i in eachindex(passed_elements)
     passed_element_areas[i] =list_of_areas[Int(passed_elements[i])]
 end
 
+
+
 #post processing
 #pushing areas to the next available size
 available_sizes =  [ 1. 2. 3.][:]
 mod_list_of_areas = postProcess(list_of_areas, available_sizes)
 list_of_areas[Int.(passed_elements)]
 passed_element_areas
+#We have to check this for strain.
+
 
 #This is for visualization
 f = Figure(resolution = (800, 800))

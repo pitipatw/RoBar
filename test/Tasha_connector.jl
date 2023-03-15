@@ -84,9 +84,4 @@ fig = visualize(
 Makie.display(fig)
 
 send(ws, "Im back!")    
-end
-end
-end
-end
-
 close(server)
