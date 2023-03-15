@@ -107,13 +107,15 @@ end
 #collecting the points for plot
 # loop each possible path to plot
     #gonna do moving graph thing :)
-nr = 6.0
-nc = 6.0
+nr = 4.0
+nc = 4.0
 f = Figure(resolution = (1000, 1000))
     
 
 track_row = 1
 track_col = 1 
+
+
 for (k,v) in possible_paths
     ptx = zeros(length(v[1])) # v[1] is a list of points
     pty = zeros(length(v[1]))
@@ -123,28 +125,41 @@ for (k,v) in possible_paths
         pty[i] = node_points[v[1][i]][2]
         ptz[i] = node_points[v[1][i]][3]
     end
-    
-    ax = Axis3(f[track_row, track_col], title = "Truss Path",
-            xlabel = "x", ylabel = "y", zlabel = "z")
-    lines!(ax, ptx, pty, ptz, color = :red, linewidth = 2)
-    scatter!(ax, ptx, pty, ptz, color = :red, markersize = 10)
+    ax = Axis3(f[track_row, track_col], title = "Truss Path $k",
+    xlabel = "x", ylabel = "y", zlabel = "z")
+
+    #plot element 
+    for (k0,v0) in elements
+        x1 = node_points[v0[1]][1]
+        y1 = node_points[v0[1]][2]
+        z1 = node_points[v0[1]][3]
+        x2 = node_points[v0[2]][1]
+        y2 = node_points[v0[2]][2]
+        z2 = node_points[v0[2]][3]
+        lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray, linewidth = 1)
+    end
+    # t is for color
     t = range(0, stop=1,length = length(ptx))
 
-    start_point = points[1]
-    end_point = points[end]
-    lines(points,
-        colormap = ColorSchemes.magma.colors,
-        color = t)
-    scatter!(start_point,color=:red, markersize = 10)
-    text!(start_point, text = "Start", color = :red)
-    scatter!(end_point, color = :green, markersize = 10)
-    text!(end_point, text = "End", color = :green)
+    lines!(ax, ptx, pty, ptz, color = t, linewidth = 2, 
+        colormap = ColorSchemes.magma.colors)
+    # scatter!(ax, ptx, pty, ptz, color = :red, markersize = 10)
+    start_point = [ ptx[1] , pty[1] , ptz[1] ]
+    end_point   = [ ptx[end] , pty[end] , ptz[end] ]
+    scatter!(ax,start_point,color=:red, markersize = 3)
+    #text!(ax,start_point, text = "Start", color = :red)
+    scatter!(ax,end_point, color = :green, markersize = 3)
+    #text!(ax,end_point, color = :green , text = "End")
     if track_col == nc
+        if track_row == nr
+            break
+        end
         track_row += 1
         track_col = 1
     else
         track_col += 1
     end
+
 end
 display(f)
 
