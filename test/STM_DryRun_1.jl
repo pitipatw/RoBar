@@ -11,8 +11,8 @@ include("STM_findPath.jl")
 include("STM_checkNodeElement.jl")
 include("STM_postProcess.jl")
 # Data input
-data = JSON.parsefile("Tester_out.json"::AbstractString; dicttype=Dict, inttype=Float64, use_mmap=true)
-
+data = JSON.parsefile("Tester_ver2_out.json"::AbstractString; dicttype=Dict, inttype=Float64, use_mmap=true)
+#we also need nodepoint!!!!!!!!!
 
 list_of_areas_raw = convert(Array{Float64,1}, data["Area"])
 σ_raw = convert(Array{Float64,1},data["Stress"])
@@ -60,6 +60,8 @@ Amin = 0.001
 # Get node-element info
 node_element_index, node_element_unsum_score ,node_element_area, list_of_forces_on_nodes = nodeElementInfo(list_of_areas, σ ,elements)
 node_element_area = checkNodeElement(node_element_area)
+#visualize the plot before and after checkNodeElement
+
 
 #explain the structure of node_element_index and node_element_unsum_score
 node_element_index
@@ -122,6 +124,8 @@ for (k,v) in possible_paths
     pty = zeros(length(v[1]))
     ptz = zeros(length(v[1]))
     for i in eachindex(v[1])
+        println("i: ", i)
+        println("v[1][i]: ", v[1][i])
         ptx[i] = node_points[v[1][i]][1]
         pty[i] = node_points[v[1][i]][2]
         ptz[i] = node_points[v[1][i]][3]

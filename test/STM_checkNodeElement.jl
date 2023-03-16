@@ -7,6 +7,7 @@ change the area of those nodes into 0
 
 node_element_area
 Dict{Int64, Vector{Float64}} with 8 entries:
+node # -> area of each element connected to the node
 5 => [9.0, 6.0, 7.0, 5.0, 5.0, 7.0]
 4 => [9.0, 8.0, 9.0, 10.0, 1.0, 4.0]
 6 => [7.0, 7.0, 5.0, 8.0, 7.0, 5.0]
@@ -25,11 +26,10 @@ function checkNodeElement(node_element_area)
         #is >= 3
         if sum(v.>0) < 3
             #if less than 3, change the area of those elements to 0
-            if length(node_element_area[k])<3
-                for j in 1:length(node_elements[k])
-                    mod_node_element_area[k][j] = 0.
-                end
+            for j in eachindex(node_element_area[k])
+                mod_node_element_area[k][j] = 0.
             end
+        
         end
     end
     return mod_node_element_area

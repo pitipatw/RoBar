@@ -65,12 +65,15 @@ function findPath(node_element_area::Dict{Int64,Vector{Float64}},node_element_in
         #dont repeat the same element
         # this part is wrong. 
         # using SET
-        next_possible_elements = setdiff(possible_elements_raw, passed_elements)
+        new_elements = setdiff(possible_elements_raw, passed_elements)
+        print(new_elements)
+        filter = Bool[possible_elements_raw[i] ∈ new_elements for i in eachindex(possible_elements_raw)]
         
-        filter = [bool(possible_elements_raw[i] ∈ next_possible_elements ? true : false  for i in eachindex(possible_elements_raw)]
-        @show next_possible_elements .!= current_element
-        println(filter)
-        new_elements = next_possible_elements[filter]
+        if sum(filter) ==0
+            println("no more elements to go")
+            break
+        end
+
         new_areas = node_element_area[next_node][filter]
 
         diff_areas = abs.(new_areas .- min_area)
