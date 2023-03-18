@@ -58,6 +58,9 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
             V = data["maxVf"]
 
             x0 = fill(0.5, ncells) # initial design
+            # might not work on every objective function.
+            # change to 1.0, and allow upper boundary for x,
+            # so it reflects the actual cross sections area.
             p = 4.0 # penalty
     
             solver = FEASolver(Direct, problem; xmin=xmin)
@@ -69,7 +72,7 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
             end
             function constr(x)
                 # volume fraction constraint
-                return sum(x .* elements_L) - V
+                return sum(x .* elements_L)/sum(elements_L) - V
             end
 
             # to do 

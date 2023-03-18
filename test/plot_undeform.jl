@@ -28,4 +28,6 @@ function plot_undeform(A::Array{Float64}, nodeCoor,eNodes, nNodes,stress)
     xlabel('x')
     ylabel('y')
     zlabel('z')
-    axis equal
+    # axis equal
+end
+end

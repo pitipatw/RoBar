@@ -86,7 +86,7 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
 
          )
         Makie.display(fig)
- 
+        end
     end
 end
 close(server)
