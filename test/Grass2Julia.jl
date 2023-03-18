@@ -103,6 +103,7 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
             results["Area"] =  r.minimizer
             results["Stress"] = σ1
             results["Elements"] = elements
+            results["Nodes"] = node_points
             msg = JSON.json(results)
             send(ws, msg)  
 

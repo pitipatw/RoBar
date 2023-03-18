@@ -1,6 +1,7 @@
 using TopOpt
 # TopOpt v0.7.2 `https://github.com/pitipatw/TopOpt.jl#master`
 using Makie, GLMakie, CairoMakie
+using JSON
 #using Meshes
 using ColorSchemes
 
@@ -13,7 +14,7 @@ include("STM_postProcess.jl")
 # Data input
 data = JSON.parsefile("Tester_ver2_out.json"::AbstractString; dicttype=Dict, inttype=Float64, use_mmap=true)
 #we also need nodepoint!!!!!!!!!
-
+node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, "Tester_ver2.json"))
 list_of_areas_raw = convert(Array{Float64,1}, data["Area"])
 σ_raw = convert(Array{Float64,1},data["Stress"])
 
