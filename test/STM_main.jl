@@ -60,11 +60,12 @@ println("Inputs Pass Successfully!")
 Amin = 0.001
 
 # Get node-element info
-node_element_index, node_element_unsum_score ,node_element_area, list_of_forces_on_nodes = nodeElementInfo(list_of_areas, σ ,elements)
-node_element_area = checkNodeElement(node_element_area)
+node_element_index, node_element_unsum_score ,node_element_area_raw, list_of_forces_on_nodes = nodeElementInfo(list_of_areas, σ ,elements)
+node_element_area = checkNodeElement(node_element_area_raw)
 #visualize the plot before and after checkNodeElement
 
 #explain the structure of node_element_index and node_element_unsum_score
+
 node_element_index
 
 # Get node score (CCC, CCT, CTT)
@@ -84,7 +85,33 @@ node_capacity_status = checkNodes(list_of_forces_on_nodes,node_element_index, li
 # get rid of hanging node
 
 possible_starting_nodes = feasibleStartingPoints(node_element_area)
-
+Makie.inline!(true)
+f0 = GLMakie.Figure(resolution = (1000, 1000));
+ax = GLMakie.Axis3(f0[1,1], aspect = :data)
+for (k0,v0) in elements
+    x1 = node_points[v0[1]][1]
+    y1 = node_points[v0[1]][2]
+    z1 = node_points[v0[1]][3]
+    x2 = node_points[v0[2]][1]
+    y2 = node_points[v0[2]][2]
+    z2 = node_points[v0[2]][3]
+    lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray, linewidth = 0.5)
+end
+display(f0)
+#label each node and element number
+for (k0,v0) in node_points
+    text!(ax, v0[1], v0[2], v0[3], string(k0), color = :black, textsize = 10)
+end
+#label each element
+for (k0,v0) in elements
+    x1 = node_points[v0[1]][1]
+    y1 = node_points[v0[1]][2]
+    z1 = node_points[v0[1]][3]
+    x2 = node_points[v0[2]][1]
+    y2 = node_points[v0[2]][2]
+    z2 = node_points[v0[2]][3]
+    text!(ax, (x1+x2)/2, (y1+y2)/2, (z1+z2)/2, string(k0), color = :black, textsize = 10)
+end
 # find the Path
 # Iterate every points as a starting point, and every element connected to the point as a starting element
 
@@ -94,9 +121,19 @@ possible_paths = Dict()
 for i in eachindex(possible_starting_nodes)
     start_node = possible_starting_nodes[i]
     #get possible starting elements
-    possible_start_element = node_element_index[start_node]
+    possible_start_elements= node_element_index[start_node]
     for j in eachindex(node_element_index[start_node])
-        start_element = Int(possible_start_element[j])
+        # println("j:" , j)
+        # println("start_node:", start_node)
+        if possible_start_elements[j] ∉ node_element_index[start_node]
+            println("HI")
+            continue
+        end
+        # if node_element_area[start_node][1] <= 0 
+        #     println("HI")
+        #     continue
+        # end
+        start_element = Int(possible_start_elements[j])
         # println("start node: ", start_node)
         # println("Start element: ", start_element)
         # result = findPath(node_element_area, node_element_index,elements, start_node,start_element)
@@ -108,7 +145,6 @@ for i in eachindex(possible_starting_nodes)
         possible_paths[(i,j)] = result
     end
 end
-
 println("Number of possible Paths: ", length(possible_paths))
 
 # now the possible_paths dictionary contains the all of the possible paths
