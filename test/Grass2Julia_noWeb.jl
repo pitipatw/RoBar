@@ -17,6 +17,8 @@ end
 
 
 filename = "test_noWeb"
+data = JSON.parsefile(filename*".json"::AbstractString; dicttype=Dict, inttype=Float64, use_mmap=true)
+
 println("Entering Topology Optimization stage...")
 
 
@@ -43,7 +45,8 @@ end
 # setting up the problem
 xmin = 0.0001 # minimum density
 V = data["maxVf"]
-
+V = 0.01
+# strict_element_num = data["strict_element_num"]
 x0 = fill(0.5, ncells) # initial design
 # might not work on every objective function.
 # change to 1.0, and allow upper boundary for x,
@@ -94,7 +97,6 @@ results["Area"] = r.minimizer
 results["Stress"] = σ1
 results["Elements"] = elements
 msg = JSON.json(results)
-send(ws, msg)
 
 # write savepath 
 savepath = joinpath(@__DIR__, filename * "_out.json")
