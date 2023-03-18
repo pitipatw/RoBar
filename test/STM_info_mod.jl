@@ -1,4 +1,4 @@
-using StaticArrays
+#using StaticArrays
 #structure of node
 # struct Node
 #     element::Vector{Int64} [ list of element that connect to the node]
