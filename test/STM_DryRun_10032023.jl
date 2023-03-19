@@ -10,6 +10,7 @@ include("STM_factors.jl")
 include("STM_findPath.jl")
 include("STM_checkNodeElement.jl")
 include("STM_postProcess.jl")
+include("STM_totalLength.jl")
 # Data input
 data = JSON.parsefile("TopOpt1_out.json"::AbstractString; dicttype=Dict, inttype=Float64, use_mmap=true)
 #we also need nodepoint!!!!!!!!!
@@ -187,9 +188,21 @@ end
 #on each line, calculate the length and sum them
 #input: node_points, passed_points
 
+element_lengths = zeros(length(elements))
+for i in eachindex(elements)
+    element = elements[i]
+    node1 = node_points[element[1]]
+    node2 = node_points[element[2]]
+    element_lengths[i] = (sum(node1 .- node2))^2
+end
 
-
-
+path_length = totalLength(possible_paths::Any, element_lengths::Any)
+truss_length = sum(element_lengths)
+path_length_ratio = Dict()
+for (k,v) in path_length
+    path_length = v
+    path_length_ratio[k] = path_length/truss_length
+end
 
 
 
