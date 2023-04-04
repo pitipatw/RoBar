@@ -44,6 +44,32 @@ for i in eachindex( filter1 )
     end
 end
 
+#plot truss structure
+truss0 = Figure(resolution = (1000, 1000));
+axis0 = Axis(truss0[1, 1], xlabel = "x", ylabel = "y", aspect=DataAspect());
+#axis equal
+for i in eachindex(elements)
+    element = elements[i]
+    @show node1 = node_points[element[1]]
+    node2 = node_points[element[2]]
+    lines!(axis0, [node1[1], node2[1]], [node1[2], node2[2]], color = :black)
+end
+#plot supports 
+for (k,v) in fixities
+    @show node = k
+    x_res = v[1] 
+    y_res = v[2]
+    @show xval = node_points[node][1]
+    @show yval = node_points[node][2]
+    if x_res 
+        scatter!(axis0, xval-1, yval, marker = :rtriangle, color = :red)
+    end
+    if y_res
+        scatter!(axis0, xval, yval-1, marker = :utriangle, color = :red)
+    end
+end
+f0 = display(truss0)
+
 # Material properties
 begin
 fc′ = 30. # concrete strength [MPa]
