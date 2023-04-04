@@ -111,9 +111,9 @@ node_capacity_status = checkNodes(list_of_forces_on_nodes,node_element_index, li
 # get rid of hanging node
 
 possible_starting_nodes = feasibleStartingPoints(node_element_area)
-Makie.inline!(true)
-f0 = GLMakie.Figure(resolution = (1000, 1000));
-ax = GLMakie.Axis3(f0[1,1], aspect = :data)
+Makie.inline!(false)
+f0 = Makie.Figure(resolution = (1000, 1000));
+ax = Makie.Axis3(f0[1,1], aspect = :data);
 for (k0,v0) in elements
     x1 = node_points[v0[1]][1]
     y1 = node_points[v0[1]][2]
@@ -121,9 +121,9 @@ for (k0,v0) in elements
     x2 = node_points[v0[2]][1]
     y2 = node_points[v0[2]][2]
     z2 = node_points[v0[2]][3]
-    lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray, linewidth = 0.5)
+    Makie.lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray, linewidth = 0.5)
 end
-display(f0)
+Makie.display(f0)
 #label each node and element number
 for (k0,v0) in node_points
     text!(ax, v0[1], v0[2], v0[3], string(k0), color = :black, textsize = 10)
