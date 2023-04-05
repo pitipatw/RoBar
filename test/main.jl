@@ -25,7 +25,6 @@ data = JSON.parsefile(filename*".json"::AbstractString; dicttype=Dict, inttype=F
 
 # turn Node_points into Int64 -> [Floats] format.
 begin
-
     node_points_raw = data["Nodes"]
     node_points = Dict{Int64, Tuple{Float64,Float64,Float64}}()
     for (k,v) in node_points_raw 
@@ -101,7 +100,20 @@ for i in eachindex(elements)
     end
 
 end
-#plot supports 
+
+area_filter = mod_pos_areas .> 0 ;
+# final_areas = mod_pos_areas[area_filter] ;
+# final_σ = σ[area_filter ] ;
+
+# final_elements = Dict{Int64, Tuple{Int64, Int64}}()
+# counter = 0 
+# for i in eachindex( area_filter ) 
+#     if area_filter[i] == true
+#         counter += 1
+#         final_elements[counter] = elements[i]
+#     end
+# end
+# #plot supports 
 # for (k,v) in fixities
 #     @show node = k
 #     x_res = v[1] 
@@ -129,43 +141,43 @@ list_of_betan = getBetaN(score)
 
 #this might be useless
 elements_betan = getElementsBetan(elements, list_of_betan)
-element_forces = σ .* pos_areas
+element_forces = σ .* mod_pos_areas
 #check strut and ties capacity
-element_capacity_status = checkStrutAndTie(pos_areas, element_forces, 30.)
+element_capacity_status = checkStrutAndTie(mod_pos_areas, element_forces, 30.)
 
 #check node capacity
-node_capacity_status = checkNodes(node2forces,node2elements, pos_areas,fc′)
+node_capacity_status = checkNodes(node2forces,node2elements, mod_pos_areas,fc′)
 
 # get rid of hanging node
 
 possible_starting_nodes = feasibleStartingPoints(node2element_areas)
-Makie.inline!(true)
-f0 = GLMakie.Figure(resolution = (1000, 1000));
-ax = GLMakie.Axis3(f0[1,1], aspect = :data)
-for (k0,v0) in elements
-    x1 = node_points[v0[1]][1]
-    y1 = node_points[v0[1]][2]
-    z1 = node_points[v0[1]][3]
-    x2 = node_points[v0[2]][1]
-    y2 = node_points[v0[2]][2]
-    z2 = node_points[v0[2]][3]
-    lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray, linewidth = 0.5)
-end
-display(f0)
-#label each node and element number
-for (k0,v0) in node_points
-    text!(ax, v0[1], v0[2], v0[3], string(k0), color = :black, textsize = 10)
-end
+# Makie.inline!(true)
+# f0 = GLMakie.Figure(resolution = (1000, 1000));
+# ax = GLMakie.Axis3(f0[1,1], aspect = :data)
+# for (k0,v0) in elements
+#     x1 = node_points[v0[1]][1]
+#     y1 = node_points[v0[1]][2]
+#     z1 = node_points[v0[1]][3]
+#     x2 = node_points[v0[2]][1]
+#     y2 = node_points[v0[2]][2]
+#     z2 = node_points[v0[2]][3]
+#     lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray, linewidth = 0.5)
+# end
+# display(f0)
+# #label each node and element number
+# for (k0,v0) in node_points
+#     text!(ax, v0[1], v0[2], v0[3], string(k0), color = :black, textsize = 10)
+# end
 #label each element
-for (k0,v0) in elements
-    x1 = node_points[v0[1]][1]
-    y1 = node_points[v0[1]][2]
-    z1 = node_points[v0[1]][3]
-    x2 = node_points[v0[2]][1]
-    y2 = node_points[v0[2]][2]
-    z2 = node_points[v0[2]][3]
-    text!(ax, (x1+x2)/2, (y1+y2)/2, (z1+z2)/2, string(k0), color = :black, textsize = 10)
-end
+# for (k0,v0) in elements
+#     x1 = node_points[v0[1]][1]
+#     y1 = node_points[v0[1]][2]
+#     z1 = node_points[v0[1]][3]
+#     x2 = node_points[v0[2]][1]
+#     y2 = node_points[v0[2]][2]
+#     z2 = node_points[v0[2]][3]
+#     text!(ax, (x1+x2)/2, (y1+y2)/2, (z1+z2)/2, string(k0), color = :black, textsize = 10)
+# end
 # find the Path
 # Iterate every points as a starting point, and every element connected to the point as a starting element
 
@@ -218,7 +230,10 @@ plt_counter = 0
 
 for (k,v) in possible_paths
     # if plt_counter > track_row*track_col
-        
+    if length(v[1]) == 2 
+        continue
+    end
+
     #reset ptx pty ptz
     ptx = zeros(length(v[1])) # v[1] is a list of points
     pty = zeros(length(v[1]))
@@ -261,7 +276,7 @@ for (k,v) in possible_paths
         x2 = node_points[v0[2]][1]
         y2 = node_points[v0[2]][2]
         z2 = node_points[v0[2]][3]
-        lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray, linewidth = 0.5)
+        lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray, linewidth = area_filter[k0])
     end
     if track_col == nc
         if track_row == nr
