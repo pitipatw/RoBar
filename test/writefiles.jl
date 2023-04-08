@@ -1,6 +1,7 @@
 global results = Dict()
 results = data
 results["Nodes"] = node_points
+results["fixities"] = fixities
 msg = JSON.json(results)
 send(ws, msg)  
 

@@ -44,6 +44,32 @@ for i in eachindex( filter1 )
     end
 end
 
+#plot truss structure
+truss0 = Figure(resolution = (1000, 1000));
+axis0 = Axis(truss0[1, 1], xlabel = "x", ylabel = "y", aspect=DataAspect());
+#axis equal
+for i in eachindex(elements)
+    element = elements[i]
+    @show node1 = node_points[element[1]]
+    node2 = node_points[element[2]]
+    lines!(axis0, [node1[1], node2[1]], [node1[2], node2[2]], color = :black)
+end
+#plot supports 
+for (k,v) in fixities
+    @show node = k
+    x_res = v[1] 
+    y_res = v[2]
+    @show xval = node_points[node][1]
+    @show yval = node_points[node][2]
+    if x_res 
+        scatter!(axis0, xval-1, yval, marker = :rtriangle, color = :red)
+    end
+    if y_res
+        scatter!(axis0, xval, yval-1, marker = :utriangle, color = :red)
+    end
+end
+f0 = display(truss0)
+
 # Material properties
 begin
 fc′ = 30. # concrete strength [MPa]
@@ -85,9 +111,9 @@ node_capacity_status = checkNodes(list_of_forces_on_nodes,node_element_index, li
 # get rid of hanging node
 
 possible_starting_nodes = feasibleStartingPoints(node_element_area)
-Makie.inline!(true)
-f0 = GLMakie.Figure(resolution = (1000, 1000));
-ax = GLMakie.Axis3(f0[1,1], aspect = :data)
+Makie.inline!(false)
+f0 = Makie.Figure(resolution = (1000, 1000));
+ax = Makie.Axis3(f0[1,1], aspect = :data);
 for (k0,v0) in elements
     x1 = node_points[v0[1]][1]
     y1 = node_points[v0[1]][2]
@@ -95,9 +121,9 @@ for (k0,v0) in elements
     x2 = node_points[v0[2]][1]
     y2 = node_points[v0[2]][2]
     z2 = node_points[v0[2]][3]
-    lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray, linewidth = 0.5)
+    Makie.lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray, linewidth = 0.5)
 end
-display(f0)
+Makie.display(f0)
 #label each node and element number
 for (k0,v0) in node_points
     text!(ax, v0[1], v0[2], v0[3], string(k0), color = :black, textsize = 10)
