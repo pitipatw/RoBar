@@ -1,17 +1,18 @@
 using TopOpt
 # TopOpt v0.7.2 `https://github.com/pitipatw/TopOpt.jl#master`
 using Makie, GLMakie
-using Meshes
+# using Meshes
 using ColorSchemes
 using TopOpt.TrussTopOptProblems.TrussVisualization: visualize
 
 
-
+begin
 include("STM_info_mod.jl")
 include("STM_factors.jl")
 include("STM_findPath.jl")
 include("STM_checkNodeElement.jl")
 include("STM_postProcess.jl")
+end
 # Data input
 filename = "testfile1.json"
 node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, filename))
@@ -19,6 +20,33 @@ ndim, nnodes, ncells = length(node_points[1]), length(node_points), length(eleme
 loads = load_cases["0"]
 
 println("This problem has ", nnodes, " nodes and ", ncells, " elements.")
+
+#plot truss structure
+truss0 = Figure(resolution = (1000, 1000));
+axis0 = Axis(truss0[2, 2], xlabel = "x", ylabel = "y", aspect=DataAspect());
+#axis equal
+for i in eachindex(elements)
+    element = elements[i]
+    @show node1 = node_points[element[1]]
+    node2 = node_points[element[2]]
+    lines!(axis0[1,1], [node1[1], node2[1]], [node1[2], node2[2]], color = :black)
+end
+#plot supports 
+for (k,v) in fixities
+    @show node = k
+    x_res = v[1] 
+    y_res = v[2]
+    @show xval = node_points[node][1]
+    @show yval = node_points[node][2]
+    if x_res 
+        scatter!(axis0[1,1], xval-1, yval, marker = :rtriangle, color = :red)
+    end
+    if y_res
+        scatter!(axis0[1,1], xval, yval-1, marker = :utriangle, color = :red)
+    end
+end
+f0 = display(truss0)
+# f1 = display(GLMakie.Screen(),truss0)
 # Material properties
 fc′ = 30. # concrete strength [MPa]
 Es = 200000. # steel strength [MPa]
@@ -206,6 +234,7 @@ for i in eachindex(elements)
         lines!(points,color = :black, linewidth = 10)
     end
 end
+
 f2
 
 # this part is for plotting another plot with color as the utilization ratio
