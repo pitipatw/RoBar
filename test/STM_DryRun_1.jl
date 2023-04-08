@@ -1,9 +1,10 @@
-# using TopOpt
+using TopOpt
 # TopOpt v0.7.2 `https://github.com/pitipatw/TopOpt.jl#master`
 using Makie, GLMakie, CairoMakie
-#using Meshes
 using JSON
+#using Meshes
 using ColorSchemes
+
 
 include("STM_info_mod.jl")
 include("STM_factors.jl")
@@ -11,16 +12,9 @@ include("STM_findPath.jl")
 include("STM_checkNodeElement.jl")
 include("STM_postProcess.jl")
 # Data input
-data = JSON.parsefile("TopOpt1_out.json"::AbstractString; dicttype=Dict, inttype=Float64, use_mmap=true)
+data = JSON.parsefile("Tester_ver2_out.json"::AbstractString; dicttype=Dict, inttype=Float64, use_mmap=true)
 #we also need nodepoint!!!!!!!!!
-node_points_raw = data["Nodes"]
-node_points = Dict{Int64, Tuple{Float64, Float64,Float64}}()
-for (k,v) in node_points_raw 
-    println(k)
-    println(v)
-    node_points[parse(Int64,k)] = Tuple{Float64,Float64,Float64}(v)
-end
-
+node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, "Tester_ver2.json"))
 list_of_areas_raw = convert(Array{Float64,1}, data["Area"])
 σ_raw = convert(Array{Float64,1},data["Stress"])
 
@@ -43,6 +37,9 @@ for i in eachindex(filter)
         elements[counter] = elements_raw_converted[i]
     end
 end
+
+
+
 
 # Material properties
 begin
@@ -114,8 +111,8 @@ begin
 #collecting the points for plot
 # loop each possible path to plot
     #gonna do moving graph thing :)
-nr = 3
-nc = 3
+nr = 7
+nc = 7
 track_row = 1
 track_col = 1 
 plt_counter = 0
@@ -182,16 +179,6 @@ display(f)
 
 cb = Colorbar(f[:, nc+1] ,colormap = ColorSchemes.magma.colors )
 end
-
-
-#on each line, calculate the length and sum them
-#input: node_points, passed_points
-
-
-
-
-
-
 
 # ptx = zeros(length(passed_points))
 # pty = zeros(length(passed_points))
