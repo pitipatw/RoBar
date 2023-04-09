@@ -62,11 +62,11 @@ pos_areas = areas[area_filter] ;
 # end
 
 elements = Dict{Int64, Tuple{Int64, Int64}}()
-counter = 0 
+global counter = 0 
 elements_raw = data["Elements"]
 for i in eachindex( area_filter ) 
     if area_filter[i] == true
-        counter += 1
+        global counter += 1
         @show string(i)
         elements[counter] = Tuple{Int64,Int64}(elements_raw[string(i)])
     end
@@ -171,11 +171,88 @@ node_capacity_status = checkNodes(node2forces,node2elements, mod_pos_areas,fc′
 # Start path finding
 
 #create adjacency matrix out of Nodes
-adjacency_matrix = Matrix{Int64}(undef, length(Nodes), length(Nodes))
+
+#create map from node to index, becuase node number maybe skiped
+reidx = 0 
+map = Dict{Int64, Int64}()
+unmap = Dict{Int64, Int64}()
 for i in eachindex(sort(Nodes))
-    @show i
+    reidx += 1
+    map[i] = reidx
+    unmap[reidx] = i
 end
 
+adjacency_matrix = zeros(Int64, length(Nodes), length(Nodes))
+for i in eachindex(sort(elements))
+    if mod_pos_areas[i] > 0
+    adjacency_matrix[map[elements[i][1]], map[elements[i][2]]] = 1
+    adjacency_matrix[map[elements[i][2]], map[elements[i][1]]] = 1
+    end
+end
+
+#plot graph using adjacency_matrix 
+f = GLMakie.Figure(resolution = (1000, 1000));
+ax = GLMakie.Axis(f[1,1])
+for i = 1:length(Nodes)
+    for j = (i+1):length(Nodes)
+        if adjacency_matrix[i,j] == 1
+            I = unmap[i]
+            J = unmap[j]
+            x1 = Nodes[I].x
+            y1 = Nodes[I].y
+            z1 = Nodes[I].z
+            x2 = Nodes[J].x
+            y2 = Nodes[J].y
+            z2 = Nodes[J].z
+            lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray)
+        end
+    end
+end
+display(f)
+
+# I want to visit every element and node.
+mod_adj = copy(adjacency_matrix)
+list_of_paths = Vector{Vector{Int64}}()
+
+# go through each node,
+# for each node go through each elements. -> arrive at new node.
+# remove the passed node from the matrix, both in ij and in ji. 
+# for each node go through each nodes. -> arrive at new node.
+# find eulerian path
+function move(adjacency_matrix::Matrix{Int64}, a::Int64, b::Int64)
+    adjacency_matrix[a,b] = 0
+    adjacency_matrix[b,a] = 0
+    return adjacency_matrix
+end
+
+using ProgressBars
+
+list_of_paths = []
+for i in eachindex(adjacency_matrix)
+    count1 = 0 
+    while sum(adjacency_matrix) > 0 && count1 < 100
+        count1 +=1 
+        path = Vector{Int64}()
+        push!(path, i)
+        count2 = 0
+        while sum(adjacency_matrix[i,:]) > 0 && count2 < 100
+            count2 += 1 
+            # go through each elements
+            for j in eachindex(adjacency_matrix[i,:])
+                if adjacency_matrix[i,j] == 1
+                    adjacency_matrix = move(adjacency_matrix, i, j)
+                    push!(path, j)
+                    i = j
+                    break
+                end
+            end
+        end
+        push!(list_of_paths, path)
+    end
+end
+
+
+path = eulerian_path_undirected(adjacency_matrix)
 # feasible starting points are the nodes that have at least one element connected to it.
 possible_starting_nodes = feasibleStartingPoints(node2element_areas)
 # Makie.inline!(true)

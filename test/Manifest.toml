@@ -2,7 +2,7 @@
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "a1e23add04735c6046221d49ff0a9db74fbf1c23"
+project_hash = "941d428acfa0954ae46f6eddf2e6bd2822387812"
 
 [[deps.ADNLPModels]]
 deps = ["ForwardDiff", "LinearAlgebra", "NLPModels", "Requires", "ReverseDiff", "SparseArrays"]
@@ -1628,6 +1628,12 @@ uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 [[deps.Profile]]
 deps = ["Printf"]
 uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
+
+[[deps.ProgressBars]]
+deps = ["Printf"]
+git-tree-sha1 = "9d84c8646109eb8bc7a006d59b157c64d5155c81"
+uuid = "49802e3a-d2f1-5c88-81d8-b72133a6f568"
+version = "1.5.0"
 
 [[deps.ProgressLogging]]
 deps = ["Logging", "SHA", "UUIDs"]
