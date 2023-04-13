@@ -21,7 +21,7 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
         #read stage info from JSON
         data = JSON.parse(msg)
         stage = data["stage"]
-        filename = "Tester_ver2"
+        filename = "Kuka1"
 
         if stage == "GS"
             println("Entering GroundStructure creation stage...")
@@ -57,7 +57,7 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
             xmin = 0.0001 # minimum density
             V = data["maxVf"]
 
-            x0 = fill(0.5, ncells) # initial design
+            x0 = V.*fill(1, ncells) # initial design
             # might not work on every objective function.
             # change to 1.0, and allow upper boundary for x,
             # so it reflects the actual cross sections area.
@@ -84,7 +84,7 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
             addvar!(m, zeros(length(x0)), ones(length(x0)))
             # add constrain
             Nonconvex.add_ineq_constraint!(m, constr)
-            options = MMAOptions(; maxiter=1000, tol=Tolerance(; kkt=1e-4, f=1e-4))
+            options = MMAOptions(; maxiter=500, tol=Tolerance(; kkt=1e-4, f=1e-4))
             TopOpt.setpenalty!(solver, p)
 
             # Run the optimization
