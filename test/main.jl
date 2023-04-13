@@ -1,9 +1,20 @@
 # using TopOpt
 # TopOpt v0.7.2 `https://github.com/pitipatw/TopOpt.jl#master`
-using Makie, GLMakie, CairoMakie
+using Makie, GLMakie #,CairoMakie
 using JSON
 #using Meshes
 using ColorSchemes
+
+# Get node-element info
+mutable struct Node
+    x::Float64
+    y::Float64
+    z::Float64
+    elements::Vector{Int64}
+    score::Vector{Int64}
+    areas::Vector{Float64}
+    forces::Vector{Float64}
+end
 
 begin
     include("STM_info_mod.jl")
@@ -37,24 +48,27 @@ areas = convert(Array{Float64,1}, data["Area"]) ;
 σ_raw = convert(Array{Float64,1},data["Stress"]) ;
 
 # turn elements into Int64 -> Int64 format.
-begin
-    elements_raw = data["Elements"] ;
-    elements_raw_converted = Dict{Int64, Tuple{Int64, Int64}}();
-    for (k,v) in elements_raw 
-        elements_raw_converted[parse(Int64,k)] = Tuple{Int64, Int64}(v) ;
-    end
-end
+
 
 area_filter = areas .> 0 ;
 pos_areas = areas[area_filter] ;
 σ = σ_raw[areas .> 0 ] ;
+# begin
+#     elements_raw = data["Elements"] ;
+#     elements_raw = Dict{Int64, Tuple{Int64, Int64}}();
+#     for (k,v) in elements_raw 
+#         elements_raw_converted[parse(Int64,k)] = Tuple{Int64, Int64}(v) ;
+#     end
+# end
 
 elements = Dict{Int64, Tuple{Int64, Int64}}()
-counter = 0 
+global counter = 0 
+elements_raw = data["Elements"]
 for i in eachindex( area_filter ) 
     if area_filter[i] == true
-        counter += 1
-        elements[counter] = elements_raw_converted[i]
+        global counter += 1
+        @show string(i)
+        elements[counter] = Tuple{Int64,Int64}(elements_raw[string(i)])
     end
 end
 
@@ -71,9 +85,39 @@ println("Inputs Pass Successfully!")
 
 Amin = 0.001
 
-# Get node-element info
-node2elements, node2element_scores ,node2element_areas_raw, node2forces = nodeElementInfo(pos_areas, σ ,elements);
-node2element_areas, mod_pos_areas = removeHanging(pos_areas, node2elements, node2element_areas_raw)
+
+
+Nodes = Dict{Int64, Node}();
+for i in eachindex(node_points)
+    x = node_points[i][1]
+    y = node_points[i][2]
+    z = node_points[i][3]
+    els = Vector{Int64}()
+    sc  = Vector{Int64}()
+    a   = Vector{Float64}()
+    fs  = Vector{Float64}()
+    check = false
+    for j in eachindex(elements)
+        if elements[j][1] == i || elements[j][2] == i
+            push!(els, j)
+            push!(a, pos_areas[j])
+            if σ[j] > 0 
+                push!(sc, 1)
+            else 
+                push!(sc, 0)
+            end
+            push!(fs, σ[j]*pos_areas[j])
+            check = true
+        end
+    end
+    # a = Node(x,y,z, els, sc, a, fs)
+    if check
+        Nodes[i] = Node(x,y,z, deepcopy(els), deepcopy(sc), deepcopy(a), deepcopy(fs))
+    end
+end
+
+#node2elements, node2element_scores ,node2element_areas_raw, node2forces = nodeElementInfo(pos_areas, σ ,elements);
+Nodes, mod_pos_areas = removeHanging(Nodes , pos_areas)
 
 #visualize the plot before and after checkNodeElement
 #plot the truss structure before and after the modifications. 
@@ -86,57 +130,31 @@ axis1 = Axis(truss0[2,1] , xlabel = "x", ylabel = "y", aspect=DataAspect());
 #axis equal
 for i in eachindex(elements)
     element = elements[i]
-    node1 = node_points[element[1]]
-    node2 = node_points[element[2]]
-    @show pos_areas[i]
-    @show mod_pos_areas[i]
-    if σ[i] > 0 
-    lines!(axis0, [node1[1], node2[1]], [node1[2], node2[2]], linewidth = pos_areas[i]*scale , color=:blue)
-    lines!(axis1, [node1[1], node2[1]], [node1[2], node2[2]], linewidth = mod_pos_areas[i]*scale, color=:blue)
-    else 
+    x1 = Nodes[element[1]].x
+    y1 = Nodes[element[1]].y
+    z1 = Nodes[element[1]].z
 
-    lines!(axis0, [node1[1], node2[1]], [node1[2], node2[2]], linewidth = pos_areas[i]*scale , color=:red)
-    lines!(axis1, [node1[1], node2[1]], [node1[2], node2[2]], linewidth = mod_pos_areas[i]*scale, color=:red)
+    x2 = Nodes[element[2]].x
+    y2 = Nodes[element[2]].y
+    z2 = Nodes[element[2]].z
+
+    if pos_areas[i] > 0 
+        # in some pos_areas position, mod_pos_areas will be 0
+        if σ[i] > 0 
+            
+            lines!(axis0, [x1, x2], [y1, y2], linewidth = pos_areas[i]*scale , color=:blue)
+            lines!(axis1, [x1, x2], [y1, y2], linewidth = mod_pos_areas[i]*scale, color=:blue)
+
+        else 
+            lines!(axis0, [x1, x2], [y1, y2], linewidth = pos_areas[i]*scale , color=:blue)
+            lines!(axis1, [x1, x2], [y1, y2], linewidth = mod_pos_areas[i]*scale, color=:blue)
+        end
     end
-
 end
+display(truss0)
 
-area_filter = mod_pos_areas .> 0 ;
-# final_areas = mod_pos_areas[area_filter] ;
-# final_σ = σ[area_filter ] ;
-
-# final_elements = Dict{Int64, Tuple{Int64, Int64}}()
-# counter = 0 
-# for i in eachindex( area_filter ) 
-#     if area_filter[i] == true
-#         counter += 1
-#         final_elements[counter] = elements[i]
-#     end
-# end
-# #plot supports 
-# for (k,v) in fixities
-#     @show node = k
-#     x_res = v[1] 
-#     y_res = v[2]
-#     @show xval = node_points[node][1]
-#     @show yval = node_points[node][2]
-#     if x_res 
-#         scatter!(axis0, xval-1, yval, marker = :rtriangle, color = :red)
-#     end
-#     if y_res
-#         scatter!(axis0, xval, yval-1, marker = :utriangle, color = :red)
-#     end
-# end
-
-f0 = display(truss0)
-
-#explain the structure of node2elements and node2element_scores
-
-node2elements
-
-# Get node score (CCC, CCT, CTT)
-score = getScore(node2element_scores)
-
+### STM starts here.
+#modify these guys to Node structure 
 list_of_betan = getBetaN(score)
 
 #this might be useless
@@ -148,8 +166,94 @@ element_capacity_status = checkStrutAndTie(mod_pos_areas, element_forces, 30.)
 #check node capacity
 node_capacity_status = checkNodes(node2forces,node2elements, mod_pos_areas,fc′)
 
-# get rid of hanging node
+# End of STM analysis.
 
+# Start path finding
+
+#create adjacency matrix out of Nodes
+
+#create map from node to index, becuase node number maybe skiped
+reidx = 0 
+map = Dict{Int64, Int64}()
+unmap = Dict{Int64, Int64}()
+for i in eachindex(sort(Nodes))
+    reidx += 1
+    map[i] = reidx
+    unmap[reidx] = i
+end
+
+adjacency_matrix = zeros(Int64, length(Nodes), length(Nodes))
+for i in eachindex(sort(elements))
+    if mod_pos_areas[i] > 0
+    adjacency_matrix[map[elements[i][1]], map[elements[i][2]]] = 1
+    adjacency_matrix[map[elements[i][2]], map[elements[i][1]]] = 1
+    end
+end
+
+#plot graph using adjacency_matrix 
+f = GLMakie.Figure(resolution = (1000, 1000));
+ax = GLMakie.Axis(f[1,1])
+for i = 1:length(Nodes)
+    for j = (i+1):length(Nodes)
+        if adjacency_matrix[i,j] == 1
+            I = unmap[i]
+            J = unmap[j]
+            x1 = Nodes[I].x
+            y1 = Nodes[I].y
+            z1 = Nodes[I].z
+            x2 = Nodes[J].x
+            y2 = Nodes[J].y
+            z2 = Nodes[J].z
+            lines!(ax, [x1,x2], [y1,y2], [z1,z2], color = :gray)
+        end
+    end
+end
+display(f)
+
+# I want to visit every element and node.
+mod_adj = copy(adjacency_matrix)
+list_of_paths = Vector{Vector{Int64}}()
+
+# go through each node,
+# for each node go through each elements. -> arrive at new node.
+# remove the passed node from the matrix, both in ij and in ji. 
+# for each node go through each nodes. -> arrive at new node.
+# find eulerian path
+function move(adjacency_matrix::Matrix{Int64}, a::Int64, b::Int64)
+    adjacency_matrix[a,b] = 0
+    adjacency_matrix[b,a] = 0
+    return adjacency_matrix
+end
+
+using ProgressBars
+
+list_of_paths = []
+for i in eachindex(adjacency_matrix)
+    count1 = 0 
+    while sum(adjacency_matrix) > 0 && count1 < 100
+        count1 +=1 
+        path = Vector{Int64}()
+        push!(path, i)
+        count2 = 0
+        while sum(adjacency_matrix[i,:]) > 0 && count2 < 100
+            count2 += 1 
+            # go through each elements
+            for j in eachindex(adjacency_matrix[i,:])
+                if adjacency_matrix[i,j] == 1
+                    adjacency_matrix = move(adjacency_matrix, i, j)
+                    push!(path, j)
+                    i = j
+                    break
+                end
+            end
+        end
+        push!(list_of_paths, path)
+    end
+end
+
+
+path = eulerian_path_undirected(adjacency_matrix)
+# feasible starting points are the nodes that have at least one element connected to it.
 possible_starting_nodes = feasibleStartingPoints(node2element_areas)
 # Makie.inline!(true)
 # f0 = GLMakie.Figure(resolution = (1000, 1000));
@@ -178,9 +282,12 @@ possible_starting_nodes = feasibleStartingPoints(node2element_areas)
 #     z2 = node_points[v0[2]][3]
 #     text!(ax, (x1+x2)/2, (y1+y2)/2, (z1+z2)/2, string(k0), color = :black, textsize = 10)
 # end
+
+
+
+
 # find the Path
 # Iterate every points as a starting point, and every element connected to the point as a starting element
-
 #this is for findPath version2
 fixed_area =  0.3
 possible_paths = Dict()

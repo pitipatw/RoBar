@@ -26,6 +26,8 @@ node2forces : node number -> forces on the node.
 """
 function nodeElementInfo(Area::Vector{Float64}, σ::Vector{Float64}, elements::Dict{Int64, Tuple{Int64, Int64}})
 #program starts here
+
+
     node2elements = Dict{Int64,Vector{Float64}}()
     node2element_scores = Dict{Int64,Vector{Float64}}()
     node2element_areas = Dict{Int64,Vector{Float64}}()
@@ -33,30 +35,30 @@ function nodeElementInfo(Area::Vector{Float64}, σ::Vector{Float64}, elements::D
     Amin = 0.001
     #could cut the time by 2 by input both ends
     for (k, v) in elements
-        #if Area[k] > Amin 
-            if σ[k] > 0 #might have to add tolerance here
-                # tension
-                val = 1.
-            elseif σ[k] <= 0 # also a tolerance here
-                # Compression
-                val = 0.
-            end
-
-            node2elements = assignValNode(node2elements,v,1,k)
-            node2elements = assignValNode(node2elements,v,2,k)
-            
-            #con is for condition
-            node2element_scores = assignValNode(node2element_scores,v,1,val)
-            node2element_scores = assignValNode(node2element_scores,v,2,val)
-
-            node2element_areas = assignValNode(node2element_areas,v,1,Area[k])
-            node2element_areas = assignValNode(node2element_areas,v,2,Area[k])
-
-            node2forces = assignValNode(node2forces,v,1,σ[k]*Area[k])
-            node2forces = assignValNode(node2forces,v,2,σ[k]*Area[k])
+        if σ[k] > 0 #might have to add tolerance here
+            # tension
+            val = 1.
+        elseif σ[k] <= 0 # also a tolerance here
+            # Compression
+            val = 0.
+        end
+        node_data = Node()
+        node2elements = assignValNode(node2elements,v,1,k)
+        node2elements = assignValNode(node2elements,v,2,k)
         
-        #end
+        #con is for condition
+        node2element_scores = assignValNode(node2element_scores,v,1,val)
+        node2element_scores = assignValNode(node2element_scores,v,2,val)
+
+        node2element_areas = assignValNode(node2element_areas,v,1,Area[k])
+        node2element_areas = assignValNode(node2element_areas,v,2,Area[k])
+
+        node2forces = assignValNode(node2forces,v,1,σ[k]*Area[k])
+        node2forces = assignValNode(node2forces,v,2,σ[k]*Area[k])
+        
+    
     end
+
     return node2elements, node2element_scores ,node2element_areas, node2forces
 end
 
@@ -89,24 +91,25 @@ node # -> area of each element connected to the node
 3 => [8.0, 6.0, 8.0, 7.0, 2.0, 9.0]
 1 => [7.0, 10.0, 8.0, 1.0, 5.0, 9.0]
 """
-function removeHanging(node_element_index,node_element_area)
+function removeHanging(Nodes ::Dict{Int64, Node}, pos_areas ::Vector{Float64})
     #create a copy of the node_element_area to modify
-    # mod_node2elements = deepcopy(node_element_index)
-    mod_node2element_areas = deepcopy(node_element_area)
     #loop each node
-    for (k,v) in node_element_area
+    #if number of elements connected to that node is less than 3
+    #change the area of those elements to 0
+    mod_pos_areas = copy(pos_areas)
+    for i in eachindex(Nodes)
         #check if the number of the non-zera element connected to the node
         #is >= 3
-        if sum(v.>0) < 3
-            # pop!(mod_node2element_areas, k)
-            # pop!(mod_node2elements, k)
-            # #if less than 3, change the area of those elements to 0
-            for j in eachindex(node_element_area[k])
-                mod_node2element_areas[k][j] = 0.
-            end
+        if sum(Nodes[i].areas .> 0 ) < 3
+            #if less than 3, change the area of those elements to 0
+            Nodes[i].areas = zeros(length(Nodes[i].areas))
+            Nodes[i].forces = zeros(length(Nodes[i].forces))
+
+            mod_pos_areas[ Nodes[i].elements] .= 0.
+            # @show pos_areas
         end
     end
-    return mod_node2element_areas
+    return Nodes , mod_pos_areas
 end
 
 """
