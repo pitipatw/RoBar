@@ -24,7 +24,7 @@ begin
 end
 
 # Data input
-filename = "TopOpt1_out"
+filename = "Kuka1_out"
 """
 Data Fields
 Area : A list of areas for each element
@@ -83,7 +83,7 @@ println("Inputs Pass Successfully!")
 
 #STM starts here. 
 
-Amin = 0.001
+Amin = 0.0001
 
 
 
@@ -124,9 +124,10 @@ Nodes, mod_pos_areas = removeHanging(Nodes , pos_areas)
 
 #plot truss structure
 scale = 5.0
-truss0 = Figure(resolution = (1000, 1000));
-axis0 = Axis(truss0[1,1], xlabel = "x", ylabel = "y", aspect=DataAspect());
-axis1 = Axis(truss0[2,1] , xlabel = "x", ylabel = "y", aspect=DataAspect()); 
+truss0 = Makie.Figure(resolution = (1000, 1000));
+axis0 = Axis3(truss0[1,1], xlabel = "x", ylabel = "y", aspect = (4,1,1), title = "original");
+axis1 = Axis3(truss0[2,1] , xlabel = "x", ylabel = "y", aspect = (4,1,1) , title = "modified"); 
+Makie.inline!(false)
 #axis equal
 for i in eachindex(elements)
     element = elements[i]
@@ -142,16 +143,31 @@ for i in eachindex(elements)
         # in some pos_areas position, mod_pos_areas will be 0
         if σ[i] > 0 
             
-            lines!(axis0, [x1, x2], [y1, y2], linewidth = pos_areas[i]*scale , color=:blue)
-            lines!(axis1, [x1, x2], [y1, y2], linewidth = mod_pos_areas[i]*scale, color=:blue)
+            lines!(axis0, [x1, x2], [y1, y2], [z1,z2], linewidth =pos_areas[i]*scale , color=:blue)
+            lines!(axis1, [x1, x2], [y1, y2], [z1,z2],linewidth = mod_pos_areas[i]*scale, color=:blue)
 
         else 
-            lines!(axis0, [x1, x2], [y1, y2], linewidth = pos_areas[i]*scale , color=:blue)
-            lines!(axis1, [x1, x2], [y1, y2], linewidth = mod_pos_areas[i]*scale, color=:blue)
+            lines!(axis0, [x1, x2], [y1, y2], [z1,z2],linewidth = pos_areas[i]*scale , color=:red)
+            lines!(axis1, [x1, x2], [y1, y2], [z1,z2],linewidth = mod_pos_areas[i]*scale, color=:red)
         end
     end
 end
-display(truss0)
+
+GLMakie.display(truss0)
+
+# create JSON to send back the information
+result2 = Dict()
+result2["Area"] =  pos_areas
+result2["Stress"] = σ
+result2["Elements"] = elements
+result2["Nodes"] = node_points
+msg = JSON.json(result2)
+# savepath 
+savepath = joinpath(@__DIR__, "result2"*"_out.json")
+# save
+open(joinpath(@__DIR__,savepath), "w") do f
+    write(f, msg)
+end
 
 ### STM starts here.
 #modify these guys to Node structure 

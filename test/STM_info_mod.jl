@@ -97,19 +97,20 @@ function removeHanging(Nodes ::Dict{Int64, Node}, pos_areas ::Vector{Float64})
     #if number of elements connected to that node is less than 3
     #change the area of those elements to 0
     mod_pos_areas = copy(pos_areas)
+    mod_Nodes = copy(Nodes)
     for i in eachindex(Nodes)
         #check if the number of the non-zera element connected to the node
         #is >= 3
         if sum(Nodes[i].areas .> 0 ) < 3
             #if less than 3, change the area of those elements to 0
-            Nodes[i].areas = zeros(length(Nodes[i].areas))
-            Nodes[i].forces = zeros(length(Nodes[i].forces))
+            mod_Nodes[i].areas = zeros(length(Nodes[i].areas))
+            mod_Nodes[i].forces = zeros(length(Nodes[i].forces))
 
             mod_pos_areas[ Nodes[i].elements] .= 0.
             # @show pos_areas
         end
     end
-    return Nodes , mod_pos_areas
+    return mod_Nodes , mod_pos_areas
 end
 
 """
