@@ -1,22 +1,5 @@
 [deps]
-CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
-ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
-HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
-<<<<<<< Updated upstream
-Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-ProgressBars = "49802e3a-d2f1-5c88-81d8-b72133a6f568"
-=======
-<<<<<<< 9435a3c222d35ef6d7fdd905a330ae0cd223093d
-=======
-Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-ProgressBars = "49802e3a-d2f1-5c88-81d8-b72133a6f568"
->>>>>>> Brute force!
->>>>>>> Stashed changes
-StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
-TopOpt = "53a1e1a5-51bb-58a9-8a02-02056cc81109"
-UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
-Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
