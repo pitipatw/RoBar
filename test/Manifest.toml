@@ -2,7 +2,15 @@
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
+<<<<<<< Updated upstream
 project_hash = "941d428acfa0954ae46f6eddf2e6bd2822387812"
+=======
+<<<<<<< 9435a3c222d35ef6d7fdd905a330ae0cd223093d
+project_hash = "8f031c3d62be117ad2ee000cd5a4a02736a71877"
+=======
+project_hash = "941d428acfa0954ae46f6eddf2e6bd2822387812"
+>>>>>>> Brute force!
+>>>>>>> Stashed changes
 
 [[deps.ADNLPModels]]
 deps = ["ForwardDiff", "LinearAlgebra", "NLPModels", "Requires", "ReverseDiff", "SparseArrays"]
