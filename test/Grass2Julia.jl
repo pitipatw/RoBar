@@ -14,7 +14,8 @@ end
 # 10 Feb 2023
 # 14 March 2023
 
-
+include("GS.jl")
+#add LinearAlgebra
 server = WebSockets.listen!("127.0.0.1", 2000) do ws
     for msg in ws
         println("Hello, we meet again :)")
@@ -26,6 +27,9 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
         if stage == "GS"
             println("Entering GroundStructure creation stage...")
             #create ground structure here.
+            node_points = data["nodes"]
+
+            GS = getGS(node_points)
             send(ws, "Ground Structre created!")
         elseif stage == "Opt"
             println("Entering Topology Optimization stage...")
@@ -133,4 +137,3 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
     end
     end
 end
-close(server)
