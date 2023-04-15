@@ -18,6 +18,7 @@ include("GS.jl")
 #add LinearAlgebra
 server = WebSockets.listen!("127.0.0.1", 2000) do ws
     for msg in ws
+        println("==============================")
         println("Hello, we meet again :)")
         #read stage info from JSON
         data = JSON.parse(msg)
@@ -27,10 +28,17 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
         if stage == "GS"
             println("Entering GroundStructure creation stage...")
             #create ground structure here.
-            node_points = data["nodes"]
-
+            node_points = Dict{Int64,Vector{Float64}}()
+            node_dummy = data["nodes"]
+            for i in eachindex(node_dummy)
+                node_points[parse(Int64,i)] = Vector{Float64}(node_dummy[i])
+            end
+                
             GS = getGS(node_points)
-            send(ws, "Ground Structre created!")
+            #write GS to JSON
+            msg = JSON.json(GS)
+            println("Ground Structure created!")
+            send(ws, msg)
         elseif stage == "Opt"
             println("Entering Topology Optimization stage...")
             open(joinpath(@__DIR__, filename*".json"), "w") do f
@@ -137,3 +145,5 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
     end
     end
 end
+
+# close(server)

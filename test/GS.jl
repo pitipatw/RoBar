@@ -83,9 +83,9 @@ function getGS(node_points::Dict{Int64,Vector{Float64}})
                 for k in keys(lov)
                     if uv ≈ k
                         check_uv = true
-                        if dis < lod[uv]
-                            lod[uv] = dis
-                            lov[uv] = [i,j]
+                        if dis < lod[k]
+                            lod[k] = dis
+                            lov[k] = [i,j]
                             # println("edit")
                         end
                     end
