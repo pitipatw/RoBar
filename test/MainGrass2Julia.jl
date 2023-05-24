@@ -15,6 +15,7 @@ end
 # 14 March 2023
 
 include("GS.jl")
+
 #add LinearAlgebra
 server = WebSockets.listen!("127.0.0.1", 2000) do ws
     for msg in ws
@@ -46,10 +47,13 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
             println("Entering Topology Optimization stage...")
             open(joinpath(@__DIR__, filename*".json"), "w") do f
             write(f, msg)
-            println("A json file written Successfully")
-            
-            node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__, filename*".json"))
 
+            println("A JSON file is written Successfully as "*filename*".json")
+            println("Reading the JSON file from: "*joinpath(@__DIR__,filename*".json"))
+
+            node_points, elements, mats, crosssecs, fixities, load_cases = load_truss_json(joinpath(@__DIR__,filename*".json"))
+            
+            println("The JSON file read Successfully")
             ndim, nnodes, ncells = length(node_points[1]), length(node_points), length(elements)
             loads = load_cases["0"]
             problem = TrussProblem(
@@ -150,4 +154,4 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
     end
 end
 
-close(server)
+# close(server)
