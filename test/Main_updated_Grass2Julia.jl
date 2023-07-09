@@ -142,9 +142,6 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
                 ,default_support_scale = 0.0
                 )
             Makie.display(fig)
-
-            
-    
         end
     end
     end
