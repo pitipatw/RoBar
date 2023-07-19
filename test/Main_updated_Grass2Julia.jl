@@ -101,7 +101,7 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
             addvar!(m, zeros(length(x0)), ones(length(x0)))
             # add constrain
             Nonconvex.add_ineq_constraint!(m, constr)
-            options = MMAOptions(; maxiter=1000, tol=Tolerance(; kkt=1e-3, f=1e-3))
+            options = MMAOptions(; maxiter=1000, tol=Tolerance(; kkt=1e-2, f=1e-2))
             TopOpt.setpenalty!(solver, p)
 
             # Run the optimization
