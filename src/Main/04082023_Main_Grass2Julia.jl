@@ -25,7 +25,7 @@ server = WebSockets.listen!("127.0.0.1", 2000) do ws
         data = JSON.parse(msg)
         stage = data["stage"]
         date = data["date"]
-        filename = date * "Muddy"
+        filename = date * "Main"
 
         if stage == "GS"
             println("Entering GroundStructure creation stage...")
